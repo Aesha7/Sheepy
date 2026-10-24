@@ -1,0 +1,19 @@
+{
+  "name": "drift-sleep-personalization",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Drift: a personalized bedroom environment. Preferences + calendar + weather + sun -> an explainable lighting/sound plan.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test --test-timeout=20000 \"test/*.test.js\"",
+    "scenarios": "node scripts/print-scenarios.js",
+    "export-agent": "node scripts/export-agent.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0"
+  }
+}

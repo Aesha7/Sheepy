@@ -1,0 +1,6 @@
+node_modules/
+data/
+.env
+ios/**/Secrets.plist
+hardware_integration/pats.jsonl
+hardware_integration/__pycache__/

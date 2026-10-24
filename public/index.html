@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Drift</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M20 4a12 12 0 1 0 8 20A10 10 0 0 1 20 4z' fill='%23f2c98a'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><path d="M20 4a12 12 0 1 0 8 20A10 10 0 0 1 20 4z" fill="currentColor"/></svg>
+      <span>Drift</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button data-tab="tonight" class="active">Tonight</button>
+      <button data-tab="prefs">Preferences</button>
+      <button data-tab="calendar">Calendar</button>
+      <button data-tab="demo">Demo scenarios</button>
+    </nav>
+    <div class="user-picker">
+      <label for="user-select" class="sr-only">User</label>
+      <select id="user-select"></select>
+      <button id="new-user" class="ghost small" title="Create a new profile">+ New</button>
+    </div>
+  </header>
+
+  <div id="sim-banner" class="sim-banner" hidden></div>
+
+  <section class="controlbar" id="controlbar">
+    <div id="integration-chips" class="chips"></div>
+    <div class="control-actions">
+      <span id="automation-state" class="muted"></span>
+      <button id="btn-pause" class="ghost">Pause automation</button>
+      <button id="btn-stop" class="danger">Stop</button>
+    </div>
+  </section>
+
+  <main>
+    <section id="tab-tonight" class="tab active"></section>
+    <section id="tab-prefs" class="tab"></section>
+    <section id="tab-calendar" class="tab"></section>
+    <section id="tab-demo" class="tab"></section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
