@@ -63,30 +63,27 @@ For the default 7 AM commitment and 60-minute preparation buffer:
 These example wall times assume a normal non-DST-transition night. The planner uses
 elapsed durations across DST. All four timeline outputs come from one DailyPlan.
 
-## Offline and explicit Claude explanations
+## Entirely on-device explanations
 
-B's completed service handoff through `4bb01f6` is integrated. See
-[LIVE_EXPLANATION_INTEGRATION.md](LIVE_EXPLANATION_INTEGRATION.md) for the sharing
-contract, request lifecycle, verification, and exact phone test steps.
+`ExplanationView(controller:)` observes the existing SleepController and renders
+`OfflineExplainer().explain(result)` synchronously from the exact retained PlanResult
+matching the displayed plan. It never calls makeResult to explain, caches no text,
+and starts no task or request. Changed results are reflected on redraw, including
+changed explanation facts with identical plan dates. A nil or mismatched result
+shows the no-current-plan message instead of stale text.
 
-The sheet observes the existing controller and renders `OfflineExplainer().explain`
-from its exact retained PlanResult immediately. Claude is optional and runs only
-after the user requests it and confirms sending the visible offline text to Anthropic.
-The service's `PlanExplanation(text:source:)` is now the single shared response type;
-C's duplicate `isFallback` wrapper and old PlanExplainer closure have been removed.
+The sheet is titled **Why this plan?** and has a small **Generated on this device**
+label. There is no live explanation button, confirmation, disclosure, response,
+loading/error state, retry, or fallback warning. This feature needs neither a key
+nor a network connection and sends no personal data anywhere.
 
-Every plan invalidation creates a new explanation revision, cancels pending work,
-and clears the previous live text/error/loading state. This includes profile changes
-that happen to produce equal PlanResults. Confirmations capture a revision, and
-responses must still match that revision and result. No plan is regenerated to
-explain it. Missing results show no prior text.
-
-Credentials come from the existing `AgentConfiguration.load()` in ClaudeAgent.swift,
-which reads bundled `Secrets.plist` using `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`.
-The explanation service receives a closure calling that loader; it does not add a
-second loader or copy credentials. The chat agent's mutable history/tools remain
-separate. No credential file was inspected and no real Claude request was made
-while integrating this service.
+The unused live explanation service, response type, dependency injection, controller
+request state/tasks, and dedicated live-service tests have been removed. No explanation
+adapter exists in the app. ClaudeAgent, AgentConfiguration.load(), and the existing
+Lamp & chat feature are unchanged; chat remains a separate user-initiated network
+feature with its existing local configuration. No credential values were inspected
+or modified. See [OFFLINE_EXPLANATION_INTEGRATION.md](OFFLINE_EXPLANATION_INTEGRATION.md)
+for Person C's current wiring and validation instructions.
 
 ## Verification and device checks
 
