@@ -25,7 +25,7 @@ struct PlanTimelineView: View {
                 if let zone = DayTime.zoneNote(timeZone, at: plan.planDate) {
                     Label("Times shown in \(zone)", systemImage: "globe")
                         .font(.footnote)
-                        .foregroundStyle(Theme.warm)
+                        .foregroundStyle(Theme.sky)
                 }
             }
 
@@ -167,7 +167,7 @@ extension PlanStep.Kind {
 
     var tint: Color {
         switch self {
-        case .wake, .morningLight: return Theme.warm
+        case .wake, .morningLight: return Theme.sky
         case .caffeineCutoff, .windDown: return Theme.accent
         }
     }

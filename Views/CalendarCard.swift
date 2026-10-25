@@ -145,13 +145,13 @@ private struct EventSummary: View {
             if !event.isAllDay, let note = DayTime.zoneNote(zone, at: event.start) {
                 Label("\(note) time", systemImage: "globe")
                     .font(.footnote)
-                    .foregroundStyle(Theme.warm)
+                    .foregroundStyle(Theme.sky)
             }
             if let destination = event.destinationTimeZoneID.flatMap(TimeZone.init(identifier:)) {
                 Label("Destination time zone: \(destination.abbreviation(for: event.end) ?? destination.identifier)",
                       systemImage: "airplane")
                     .font(.footnote)
-                    .foregroundStyle(Theme.warm)
+                    .foregroundStyle(Theme.sky)
             }
         }
     }
@@ -250,7 +250,7 @@ extension CalendarEvent {
             CalendarCard(events: [ended], mode: .live, fallbackZone: .current, now: .now,
                          loading: false, error: nil, connected: true, onEnable: {}, onRefresh: {})
             CalendarCard(events: [], mode: .live, fallbackZone: .current, now: .now,
-                         loading: false, error: "Calendar access is denied. Allow Full Access for Sleep Sheep in Settings.",
+                         loading: false, error: "Calendar access is denied. Allow Full Access for Sheepy in Settings.",
                          connected: false, onEnable: {}, onRefresh: {})
         }
         .padding(16)

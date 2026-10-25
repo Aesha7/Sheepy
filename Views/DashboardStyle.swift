@@ -1,16 +1,31 @@
 import SwiftUI
 
-// Shared look for the dashboard: deep navy, cream text, lavender accents, rounded cards.
+// Sheepy's look: a calm night sky in cool indigo and violet, moonlight-white text,
+// lavender actions and periwinkle-blue details, on rounded cards.
 
 enum Theme {
-    static let background = Color(red: 0.05, green: 0.07, blue: 0.13)   // #0D1120
-    static let card = Color(red: 0.10, green: 0.12, blue: 0.21)
-    static let cardBorder = Color.white.opacity(0.07)
-    static let text = Color(red: 0.96, green: 0.94, blue: 0.90)         // #F4EFE6
-    static let secondaryText = Color(red: 0.96, green: 0.94, blue: 0.90).opacity(0.72)
-    static let accent = Color(red: 0.74, green: 0.67, blue: 0.96)       // lavender
-    static let warm = Color(red: 0.95, green: 0.79, blue: 0.54)         // #F2C98A
-    static let warning = Color(red: 0.98, green: 0.64, blue: 0.57)
+    static let background = Color(red: 0.055, green: 0.067, blue: 0.19)  // #0E1130 deep indigo
+    static let backgroundLow = Color(red: 0.11, green: 0.086, blue: 0.26) // #1C1642 violet dusk
+    /// Full-screen backdrop: indigo at the top fading to violet.
+    static let nightSky = LinearGradient(colors: [background, backgroundLow], startPoint: .top, endPoint: .bottom)
+    static let card = Color(red: 0.12, green: 0.13, blue: 0.29)          // #1F2149
+    static let cardBorder = Color(red: 0.70, green: 0.65, blue: 0.97).opacity(0.16)
+    static let text = Color(red: 0.94, green: 0.95, blue: 1.0)           // #EFF1FF moonlight
+    static let secondaryText = Color(red: 0.74, green: 0.76, blue: 0.90) // #BCC2E6
+    static let accent = Color(red: 0.71, green: 0.65, blue: 0.97)        // #B5A6F7 lavender
+    static let sky = Color(red: 0.58, green: 0.74, blue: 1.0)            // #94BDFF periwinkle
+    static let warning = Color(red: 0.97, green: 0.66, blue: 0.76)       // #F7A8C2 soft rose
+}
+
+/// Colors of the Sheepy figure, matched to the 3D-printed sheep.
+enum SheepColors {
+    static let wool = Color(red: 0.98, green: 0.98, blue: 0.97)
+    static let woolShade = Color(red: 0.84, green: 0.84, blue: 0.91)
+    static let face = Color(red: 0.84, green: 0.68, blue: 0.53)          // tan
+    static let faceLight = Color(red: 0.89, green: 0.75, blue: 0.62)
+    static let earInner = Color(red: 0.76, green: 0.59, blue: 0.45)
+    static let eye = Color(red: 0.11, green: 0.10, blue: 0.18)
+    static let blush = Color(red: 0.96, green: 0.62, blue: 0.70)
 }
 
 struct CardStyle: ViewModifier {
@@ -100,7 +115,7 @@ struct SourceBadge: View {
 
     private var color: Color {
         switch kind {
-        case .demo: return Theme.warm
+        case .demo: return Theme.sky
         case .liveMode: return Theme.secondaryText
         case .loaded: return Theme.accent
         }

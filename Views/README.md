@@ -36,6 +36,19 @@ replacing settings, resources, entitlements, or schemes. It does not open creden
 The instructions below describe C's original handoff; entry-point and generator
 integration are now complete.
 
+## Sheepy look (Oct 25)
+
+- **Name:** the dashboard title is "Sheepy". The home-screen name comes from `CFBundleDisplayName` in
+  `Resources/Info.plist` (A's file), which still says "Sleep Sheep".
+- **Colors** (`Theme` in `DashboardStyle.swift`): night-sky gradient from deep indigo `#0E1130` to violet
+  `#1C1642`, indigo cards `#1F2149` with a faint lavender border, moonlight text `#EFF1FF`, secondary `#BCC2E6`,
+  lavender actions `#B5A6F7`, periwinkle details `#94BDFF` (replaces the old gold), soft rose warnings `#F7A8C2`.
+- **Sheepy figure** (`SheepyFigure` in `SheepyView.swift`, colors in `SheepColors`): drawn to match the 3D print:
+  bumpy white wool, tan face and floppy ears under a wool fringe, glossy eyes with two highlights, the small "ω"
+  mouth, tan feet. Lively (bright eyes, blush), sleepy (heavy lids, ears lower), sleeping (closed eyes, Zs),
+  drained (droopy lids, frown, faded), and neutral when there's no sleep data. D's `sheepy-*` images still
+  replace it automatically if added to the asset catalog.
+
 ## "Why this plan?" experience (Oct 25, on top of A's c2f9dad)
 
 - **Entry point:** a Why this plan? button inside the plan card, right under the four times. It appears only when

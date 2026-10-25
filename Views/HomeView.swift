@@ -61,8 +61,8 @@ struct HomeView: View {
                 .padding(.top, 4)
                 .padding(.bottom, 32)
             }
-            .background(Theme.background.ignoresSafeArea())
-            .navigationTitle("Your sleep plan")
+            .background(Theme.nightSky.ignoresSafeArea())
+            .navigationTitle("Sheepy")
             .navigationBarTitleDisplayMode(.large)
             // A solid bar appears once content scrolls, so text never runs under the status bar.
             .toolbarBackground(Theme.background, for: .navigationBar)
@@ -102,7 +102,7 @@ struct HomeView: View {
 
     private var modeCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+            Text("Your sleep plan · \(now.formatted(.dateTime.weekday(.wide).month(.wide).day()))")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.secondaryText)
             Picker("Planning data", selection: modeBinding) {

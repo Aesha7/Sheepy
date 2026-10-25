@@ -38,7 +38,7 @@ struct ExplanationView: View {
                 }
                 .padding(16)
             }
-            .background(Theme.background.ignoresSafeArea())
+            .background(Theme.nightSky.ignoresSafeArea())
             .foregroundStyle(Theme.text)
             .fontDesign(.rounded)
             .navigationTitle("Why this plan?")
@@ -105,7 +105,7 @@ struct ExplanationView: View {
     @ViewBuilder private func offlineBlock(_ text: String) -> some View {
         Label("Offline explanation", systemImage: "iphone")
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Theme.warm)
+            .foregroundStyle(Theme.sky)
             .accessibilityAddTraits(.isHeader)
         Text(text)
             .fixedSize(horizontal: false, vertical: true)
