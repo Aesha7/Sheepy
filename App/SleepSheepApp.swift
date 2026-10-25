@@ -46,6 +46,21 @@ struct ContentView: View {
                         LabeledContent("Pats since power-on", value: "\(status.pats)")
                     } else { Text("Connect to receive live status.").foregroundStyle(.secondary) }
                 }
+                Section("Morning light demo") {
+                    Text(controller.morningLightDemoActive
+                         ? "Pat Sheepy to turn the light off."
+                         : "Fade to 80% over 12 seconds, then pat Sheepy to turn it off.")
+                    Button("Start morning light demo") {
+                        Task { await controller.startMorningLightDemo() }
+                    }
+                    .disabled(!controller.connected || controller.busy || controller.morningLightDemoActive)
+                    if controller.simulated {
+                        Button("Simulate wake-up pat", action: controller.simulatePat)
+                            .disabled(!controller.morningLightDemoActive)
+                    }
+                    Text("Keep Sheepy open and connected for pat detection. This starts now; it does not schedule an alarm. Manual lamp controls or chat end the demo's pat-to-off mode.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
                 Section("Warm light") {
                     LabeledContent("Brightness", value: "\(Int(brightness))%")
                     Slider(value: $brightness, in: 0...100, step: 1)
@@ -94,7 +109,7 @@ struct ContentView: View {
                     Section("Needs attention") { Text(error).foregroundStyle(.red).textSelection(.enabled) }
                 }
             }
-            .navigationTitle("Sleep Sheep")
+            .navigationTitle("Sheepy")
             .tint(Color(red: 0.55, green: 0.32, blue: 0.13))
         }
     }

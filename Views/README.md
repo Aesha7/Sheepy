@@ -67,3 +67,15 @@ when deleting files. HealthKit entitlements and signing settings must be preserv
   quests. Source badges say "Demo data", "Live mode" (nothing loaded) or the provider name only when data loaded.
 - **Explanation sheet:** a summary of the four times for the wake day in the plan's time zone and where the
   inputs came from, then the offline explanation one sentence per paragraph with "Generated on this device".
+
+## Morning light hardware demo
+
+Lamp & chat uses the existing controller and Bluetooth service. Start morning light
+demo fades to 80% over 12 seconds (independent of Stage demo speedup). The next new
+pat commands an immediate light-off; pats continue to be logged normally. A pat
+received while the start command is pending is handled after that command completes.
+Manual lamp commands, chat, disconnects and hardware switches disarm this behavior.
+A failed off command shows an error and leaves Light off available for retry.
+Keep the app open and connected: this is not a scheduled alarm or background service.
+Simulated sheep exposes a Simulate wake-up pat button for an offline rehearsal.
+No sleep duration is inferred from these pats, and no Health data is modified.

@@ -17,7 +17,7 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Connect to your Sleep Sheep to adjust its light and record head pats.</string>
+	<string>Connect to your Sheepy to adjust its light and record head pats.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Read your calendar commitments to help plan your sleep and wake-up routine.</string>
 	<key>NSHealthShareUsageDescription</key>

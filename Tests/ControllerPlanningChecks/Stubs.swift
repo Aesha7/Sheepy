@@ -1,7 +1,28 @@
 // Compile only with the standalone controller runner, never into the app.
 import Foundation
 
-typealias BluetoothSheep = SimulatedSheep
+// Controlled transport lets checks deliver pats during an outstanding write.
+@MainActor final class BluetoothSheep: SheepHardware {
+    static var onWrite: ((SimulatedSheep, LampCommand) async throws -> Void)?
+    private let base = SimulatedSheep()
+    var latest: SheepStatus? { base.latest }
+    var onStatus: ((SheepStatus) -> Void)? {
+        get { base.onStatus } set { base.onStatus = newValue }
+    }
+    var onConnection: ((String, Bool) -> Void)? {
+        get { base.onConnection } set { base.onConnection = newValue }
+    }
+    var onNewSession: (() -> Void)? {
+        get { base.onNewSession } set { base.onNewSession = newValue }
+    }
+    func connect() { base.connect() }
+    func disconnect() { base.disconnect() }
+    func getStatus() throws -> SheepStatus { try base.getStatus() }
+    func setLamp(_ command: LampCommand) async throws -> SheepStatus {
+        try await Self.onWrite?(base, command)
+        return try await base.setLamp(command)
+    }
+}
 
 @MainActor final class PatLog {
     init(simulated: Bool) throws { }

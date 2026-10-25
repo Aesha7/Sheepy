@@ -92,6 +92,59 @@ import Foundation
         var tokyo = Calendar(identifier: .gregorian)
         tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         precondition(tokyo.component(.day, from: controller.plan!.planDate) == 26)
+        controller.selectSimulation(true)
+        controller.connect()
+        controller.simulatePat() // Existing pats must not stop a newly armed demo.
+        await controller.startMorningLightDemo()
+        precondition(controller.morningLightDemoActive && controller.status?.target == 80)
+        controller.simulatePat()
+        for _ in 0..<100 where controller.morningLightDemoActive || controller.busy { await Task.yield() }
+        precondition(!controller.morningLightDemoActive && controller.status?.target == 0)
+        precondition(controller.status?.level == 0 && controller.status?.pats == 2)
+        await controller.startMorningLightDemo()
+        precondition(controller.morningLightDemoActive)
+        await controller.setLamp(brightness: 25, minutes: 0)
+        controller.simulatePat()
+        await Task.yield()
+        precondition(!controller.morningLightDemoActive && controller.status?.target == 25)
+        await controller.startMorningLightDemo()
+        controller.disconnect()
+        precondition(!controller.morningLightDemoActive && controller.status == nil)
+        controller.connect()
+        controller.simulatePat()
+        await Task.yield()
+        precondition(!controller.morningLightDemoActive)
+        controller.disconnect()
+        controller.selectSimulation(false)
+        controller.connect()
+        var commands: [Int] = []
+        BluetoothSheep.onWrite = { hardware, command in
+            commands.append(command.brightness)
+            if command.brightness == 80 {
+                hardware.pat()
+                hardware.pat()
+                await Task.yield()
+            }
+        }
+        await controller.startMorningLightDemo()
+        precondition(commands == [80, 0]) // Exactly one off, after the fade write.
+        precondition(!controller.morningLightDemoActive && controller.status?.target == 0)
+        BluetoothSheep.onWrite = { hardware, command in
+            if command.brightness == 80 { hardware.pat() }
+            else { throw SheepFailure("Off write failed") }
+        }
+        await controller.startMorningLightDemo()
+        precondition(!controller.morningLightDemoActive && !controller.busy)
+        precondition(controller.error?.contains("Try Light off") == true)
+        BluetoothSheep.onWrite = nil
+        await controller.setLamp(brightness: 0, minutes: 0)
+        precondition(controller.error == nil && controller.status?.target == 0)
+        BluetoothSheep.onWrite = { _, _ in controller.disconnect() }
+        await controller.startMorningLightDemo()
+        precondition(controller.status == nil && !controller.morningLightDemoActive && !controller.busy)
+        BluetoothSheep.onWrite = nil
+        print("Pat-during-write serialization, duplicate pats, off failure/retry and stale completion checks passed")
+        print("Morning demo fade, pat-to-off, rearm, manual override and disconnect checks passed")
         print("Health setup completion, error, cancellation, stale completion and empty post-setup fetch checks passed")
         print("Controller normal → bad-night → reset, refresh, profile, provenance and error checks passed")
     }

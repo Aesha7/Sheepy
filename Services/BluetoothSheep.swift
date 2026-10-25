@@ -56,7 +56,7 @@ final class BluetoothSheep: NSObject, SheepHardware, @preconcurrency CBCentralMa
         switch central.state {
         case .poweredOn:
             guard peripheral == nil else { return }
-            onConnection?("Looking for SleepSheep…", false)
+            onConnection?("Looking for Sheepy…", false)
             central.scanForPeripherals(withServices: [Self.serviceID], options: nil)
             connectionTimeout?.cancel()
             connectionTimeout = Task { [weak self] in
@@ -65,7 +65,7 @@ final class BluetoothSheep: NSObject, SheepHardware, @preconcurrency CBCentralMa
             }
         case .unknown, .resetting: onConnection?("Waiting for Bluetooth…", false)
         case .poweredOff: failConnection("Bluetooth is off. Enable it in Settings, then reconnect.")
-        case .unauthorized: failConnection("Bluetooth permission denied. Allow Sleep Sheep in Settings.")
+        case .unauthorized: failConnection("Bluetooth permission denied. Allow Sheepy in Settings.")
         case .unsupported: failConnection("Bluetooth is unavailable here. Use a real iPhone or simulation.")
         @unknown default: failConnection("Bluetooth is unavailable.")
         }
@@ -76,7 +76,7 @@ final class BluetoothSheep: NSObject, SheepHardware, @preconcurrency CBCentralMa
         central.stopScan()
         self.peripheral = peripheral
         peripheral.delegate = self
-        onConnection?("Connecting to SleepSheep…", false)
+        onConnection?("Connecting to Sheepy…", false)
         central.connect(peripheral, options: nil)
     }
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
@@ -130,7 +130,7 @@ final class BluetoothSheep: NSObject, SheepHardware, @preconcurrency CBCentralMa
             latest = status; lastUpdate = Date()
             if !ready {
                 ready = true; connectionTimeout?.cancel()
-                onConnection?("Connected to SleepSheep", true)
+                onConnection?("Connected to Sheepy", true)
             }
             onStatus?(status)
             if !waitingForWrite { finish(.success(status)) }

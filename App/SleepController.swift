@@ -12,6 +12,10 @@ final class SleepController: ObservableObject {
     @Published var busy = false
     @Published var chat: [ChatEntry] = []
     @Published var stageDemo = false
+    @Published private(set) var morningLightDemoActive = false
+    private var morningDemoID = UUID()
+    private var morningDemoLastPat: Int?
+    private var morningDemoStopPending = false
     @Published private(set) var simulated: Bool
     @Published var profile: SleepProfile {
         didSet { if profile != oldValue && !updatingPlanningInputs { regeneratePlan() } }
@@ -253,11 +257,12 @@ final class SleepController: ObservableObject {
         hardware.onNewSession = { [weak self] in self?.patLog?.resetBaseline() }
         hardware.onConnection = { [weak self] text, connected in
             self?.connection = text; self?.connected = connected
-            if !connected { self?.status = nil }
+            if !connected { self?.status = nil; self?.cancelMorningLightDemo() }
         }
         hardware.onStatus = { [weak self] status in
             guard let self else { return }
             self.status = status
+            self.observeMorningDemoPat(status.pats)
             do {
                 try self.patLog?.record(status.pats)
                 self.pats = self.patLog?.recent() ?? []
@@ -269,6 +274,7 @@ final class SleepController: ObservableObject {
     }
     func selectSimulation(_ enabled: Bool) {
         guard !busy, enabled != simulated else { return }
+        cancelMorningLightDemo()
         hardware.disconnect()
         hardware.onStatus = nil; hardware.onConnection = nil; hardware.onNewSession = nil
         simulated = enabled
@@ -278,10 +284,75 @@ final class SleepController: ObservableObject {
         wireHardware()
     }
     func connect() { error = nil; hardware.connect() }
-    func disconnect() { hardware.disconnect() }
+    func disconnect() { cancelMorningLightDemo(); hardware.disconnect() }
     func simulatePat() { (hardware as? SimulatedSheep)?.pat() }
+    /// An immediate 12-second demo, independent of the planner and stage speedup.
+    /// The first fresh pat stops it; historical pats and reconnect baselines do not.
+    func startMorningLightDemo() async {
+        guard connected, !busy, !morningLightDemoActive else { return }
+        let id = UUID()
+        morningDemoID = id
+        busy = true
+        error = nil
+        do {
+            morningDemoLastPat = try hardware.getStatus().pats
+            morningDemoStopPending = false
+            morningLightDemoActive = true
+            let command = try LampCommand(brightness: 80, minutes: 0.2, speedup: 1)
+            let updated = try await hardware.setLamp(command)
+            if morningDemoID == id { status = updated }
+        } catch {
+            if morningDemoID == id {
+                cancelMorningLightDemo()
+                self.error = "Morning light demo: \(error.localizedDescription) Check the lamp; use Light off if needed."
+            }
+        }
+        busy = false
+        // A pat can arrive before the fade command's acknowledgment. Serialize the
+        // off command after it, rather than dropping that pat or overlapping writes.
+        await stopMorningDemoIfNeeded(id: id)
+    }
+
+    private func cancelMorningLightDemo() {
+        morningDemoID = UUID()
+        morningLightDemoActive = false
+        morningDemoLastPat = nil
+        morningDemoStopPending = false
+    }
+
+    private func observeMorningDemoPat(_ count: Int) {
+        guard morningLightDemoActive else { return }
+        if let previous = morningDemoLastPat, count > previous {
+            morningDemoStopPending = true
+        }
+        morningDemoLastPat = count
+        guard morningDemoStopPending, !busy else { return }
+        let id = morningDemoID
+        Task { [weak self] in await self?.stopMorningDemoIfNeeded(id: id) }
+    }
+
+    private func stopMorningDemoIfNeeded(id: UUID) async {
+        guard morningDemoID == id, morningLightDemoActive,
+              morningDemoStopPending, connected, !busy else { return }
+        morningLightDemoActive = false
+        morningDemoStopPending = false
+        morningDemoLastPat = nil
+        busy = true
+        do {
+            let command = try LampCommand(brightness: 0, minutes: 0, speedup: 1)
+            let updated = try await hardware.setLamp(command)
+            if morningDemoID == id { status = updated }
+        } catch {
+            if morningDemoID == id {
+                self.error = "Could not turn off the morning light: \(error.localizedDescription) Try Light off."
+            }
+        }
+        busy = false
+    }
+
     func setLamp(brightness: Double, minutes: Double) async {
         guard !busy else { return }
+        cancelMorningLightDemo()
         busy = true; error = nil
         defer { busy = false }
         do {
@@ -292,6 +363,7 @@ final class SleepController: ObservableObject {
     func send(_ text: String) async {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !busy, !text.isEmpty else { return }
+        cancelMorningLightDemo()
         busy = true; error = nil
         defer { busy = false }
         chat.append(ChatEntry(role: "You", text: text))
@@ -301,7 +373,7 @@ final class SleepController: ObservableObject {
                 guard let self else { throw SheepFailure("App controller unavailable.") }
                 return try await self.runTool(name, input)
             }
-            chat.append(ChatEntry(role: "Sleep Sheep", text: answer))
+            chat.append(ChatEntry(role: "Sheepy", text: answer))
         } catch {
             self.error = error.localizedDescription
             chat.append(ChatEntry(role: "Error", text: error.localizedDescription))
