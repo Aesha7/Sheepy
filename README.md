@@ -1,7 +1,27 @@
-# Sleep Sheep
+# Sheepy
 
-Standalone iPhone demo for the SleepSheep Arduino, with a Python USB/phone-browser
-fallback. iOS 17+, SwiftUI, CoreBluetooth, and URLSession. No Swift dependencies.
+Sheepy is an iPhone sleep-planning app with a Bluetooth sheep companion. It combines
+calendar commitments, a recent HealthKit sleep summary, and user preferences into
+four recommendations: stop caffeine, start winding down, wake up, and get morning
+light. Plan explanations are generated entirely on-device from the displayed result.
+
+Built with SwiftUI, EventKit, HealthKit, and CoreBluetooth for iOS 17+. The Arduino
+handles light fades and reports touch events and relative room brightness. The
+optional Claude chat controls hardware; it is separate from offline plan explanations.
+
+## Presentation and integration guides
+
+- [Presentation handout PDF](output/handout/Sheepy_Presentation_Handout.pdf)
+- [Editable handout HTML](output/handout/Sheepy_Presentation_Handout.html)
+- [Dashboard and demo guide](Views/README.md)
+- [Planner integration](Docs/PLANNER_INTEGRATION.md)
+- [Offline explanations](Docs/OFFLINE_EXPLANATION_INTEGRATION.md)
+- [Calendar integration](Docs/CALENDAR_INTEGRATION.md)
+- [HealthKit integration](Docs/HEALTHKIT_INTEGRATION.md)
+- [Arduino firmware and USB references](hardware_integration/README.md)
+
+The handout records the tested implementation at `0b01cec`; the main-branch
+consolidation adds documentation and hardware references without changing app behavior.
 
 ## Run the iPhone app
 
@@ -9,14 +29,19 @@ fallback. iOS 17+, SwiftUI, CoreBluetooth, and URLSession. No Swift dependencies
    `python3 scripts/generate_project.py` to sync source membership while preserving the checked-in project configuration. It does not create or read credential files.
 2. In **Signing & Capabilities**, select your development team and choose a unique
    bundle identifier if needed. Select your real iPhone as the run destination.
-3. Set `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `Resources/Secrets.plist`.
+3. For optional Claude chat, create your local `Resources/Secrets.plist` from
+   `Resources/Secrets.example.plist`, then set `ANTHROPIC_API_KEY` and
+   `ANTHROPIC_MODEL`. Keep the local resource present for Xcode builds even if
+   you leave chat unconfigured.
    This file is ignored by Git. It is bundled into the private demo app: do not
    distribute that build, and revoke the key after the hackathon. Never put the key
-   in the example file. Manual light controls work without a key.
+   in the example file. Planning, offline explanations, and manual light controls work without a key.
 4. Run the app, allow Bluetooth, power on the sheep without touching its head, and
-   tap **Connect**. Scanning filters by service UUID. Keep the phone nearby.
-5. Try brightness 100, duration 5 minutes with **Stage demo · 60× faster** enabled:
-   the fade takes 5 seconds. Turn the stage toggle off for real timing.
+   open **Lamp & chat**, turn **Simulated sheep** off, and tap **Connect**.
+   Disconnect nRF Connect first. Scanning filters by service UUID. Keep the phone nearby.
+5. Tap **Start morning light demo**: the lamp fades toward 80% over 12 seconds.
+   Pat Sheepy to turn it off. Keep the app open and connected. Manual controls
+   and chat end the demo’s pat-to-off mode. This demo does not schedule an alarm.
 6. Ask “Start a gentle sunrise now.” Claude can inspect status/pats, start a fade,
    and explain its choice. This starter does not schedule tomorrow's wake-up.
 
@@ -25,11 +50,9 @@ available there. Connect and use **Simulate a head pat** to test the flow. Simul
 and real pat logs are stored separately. Claude still needs a real API key; the
 simulation replaces hardware only.
 
-The generated secrets example uses `claude-sonnet-5-5`, verified against the
-[model overview](https://platform.claude.com/docs/en/models/overview). Override it
-with a model your account can access. The REST loop follows the
-[Claude tool-call contract](https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls)
-and uses `POST /v1/messages` with `anthropic-version: 2023-06-01`.
+For optional chat, choose a model available to your Anthropic account. The client
+uses the Messages API with tool calls; no live Claude call is required for the
+planning or hardware demonstration.
 
 ## USB fallback and prompt iteration
 
@@ -85,8 +108,8 @@ HTTP server is for the local hackathon demo, not public hosting.
   Python logs to `pats.jsonl`, or `simulated-pats.jsonl` in fake mode.
 
 Pats are a sleep proxy, not clinical sleep data. Room brightness is relative
-0–1023, not lux. Label stage speedup and simulated data in the pitch. Weather and
-calendar integrations are intentionally unavailable until real sources are wired.
+0–1023, not lux. Label stage speedup and simulated data in the pitch. Calendar and HealthKit providers are implemented with explicit authorization
+flows; device permission testing remains necessary. Weather remains a placeholder.
 
 ## Files and checks
 
