@@ -8,7 +8,7 @@ struct SleepSummaryView: View {
     var loading = false
     var error: String? = nil
     var onEnable: (() -> Void)? = nil
-    var onRefresh: (() -> Void)? = nil
+    var authorizationFlowCompleted = false
 
     private var badge: SourceBadge.Kind {
         guard let summary else { return .of(mode: mode, loadedFrom: nil) }
@@ -51,27 +51,19 @@ struct SleepSummaryView: View {
                     .foregroundStyle(Theme.secondaryText)
             }
 
-            if let onEnable {
-                controls(onEnable: onEnable)
+            if !authorizationFlowCompleted, let onEnable {
+                CardButton(title: "Enable Health", systemImage: "heart.text.square", prominent: mode == .demo || summary == nil,
+                           action: onEnable)
+                    .disabled(loading)
+                    .padding(.top, 4)
+            }
+            if mode == .live {
+                HintText("Manage access in Health settings.")
+            } else if !authorizationFlowCompleted, onEnable != nil {
+                HintText("Enable Health switches to live mode and asks to read Sleep and Heart Rate.")
             }
         }
         .card()
-    }
-
-    @ViewBuilder private func controls(onEnable: @escaping () -> Void) -> some View {
-        HStack(spacing: 10) {
-            if mode == .live, let onRefresh {
-                CardButton(title: "Refresh sleep", systemImage: "arrow.clockwise", action: onRefresh)
-            }
-            CardButton(title: "Enable Health", systemImage: "heart.text.square", prominent: mode == .demo || summary == nil,
-                       action: onEnable)
-        }
-        .disabled(loading)
-        .padding(.top, 4)
-
-        HintText(mode == .demo
-                 ? "Enable Health switches to live mode and asks to read Sleep and Heart Rate."
-                 : "Read access is managed in the Health app. An empty result can also mean no recent recorded sleep.")
     }
 }
 
@@ -83,11 +75,11 @@ struct SleepSummaryView: View {
     return ScrollView {
         VStack(spacing: 16) {
             SleepSummaryView(summary: demo.sleepSummary, mode: .demo, timeZone: .current, onEnable: {})
-            SleepSummaryView(summary: live, mode: .live, timeZone: .current, onEnable: {}, onRefresh: {})
-            SleepSummaryView(summary: nil, mode: .live, timeZone: .current, onEnable: {}, onRefresh: {})
-            SleepSummaryView(summary: nil, mode: .live, timeZone: .current, loading: true, onEnable: {}, onRefresh: {})
+            SleepSummaryView(summary: live, mode: .live, timeZone: .current, onEnable: {}, authorizationFlowCompleted: true)
+            SleepSummaryView(summary: nil, mode: .live, timeZone: .current, onEnable: {}, authorizationFlowCompleted: true)
+            SleepSummaryView(summary: nil, mode: .live, timeZone: .current, loading: true, onEnable: {}, authorizationFlowCompleted: true)
             SleepSummaryView(summary: nil, mode: .live, timeZone: .current,
-                             error: "Health: Health data is unavailable on this device.", onEnable: {}, onRefresh: {})
+                             error: "Health: Health data is unavailable on this device.", onEnable: {})
         }
         .padding(16)
     }

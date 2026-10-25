@@ -48,7 +48,7 @@ struct HomeView: View {
                     SleepSummaryView(summary: controller.sleepSummary, mode: mode, timeZone: profileZone,
                                      loading: controller.healthLoading, error: controller.healthError,
                                      onEnable: { Task { await enableHealth() } },
-                                     onRefresh: { Task { await refreshHealth() } })
+                                     authorizationFlowCompleted: controller.healthAuthorizationFlowCompleted)
                     CalendarCard(
                         events: controller.calendarEvents, mode: mode, fallbackZone: profileZone, now: now,
                         loading: calendarBusy, error: calendarError, connected: calendarConnected,
@@ -175,7 +175,7 @@ struct HomeView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             } else {
-                Text("Your wake time, morning light, caffeine cutoff and wind-down will appear here once your plan is ready, with Why this plan? below them.")
+                Text("Your recommended times and an explanation will appear here when your plan is ready.")
                     .foregroundStyle(Theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -255,11 +255,6 @@ struct HomeView: View {
         if await controller.requestHealthAccess() {
             await controller.refreshLiveSleepSummary(before: Date())
         }
-    }
-
-    private func refreshHealth() async {
-        guard !busy, mode == .live else { return }
-        await controller.refreshLiveSleepSummary(before: Date())
     }
 
     private func resetDemo() {

@@ -35,9 +35,12 @@ Enable Calendar switches to live only if necessary, explicitly requests access,
 and then refreshes the next seven days. Refresh never prompts. Calendar occurrences
 are keyed by (id, start, end). Empty, loading, error, and demo states are represented.
 
-Recent sleep provides Enable Health and Refresh sleep. Authorization completion is
-not presented as proof of read permission. Missing readable data does not imply
-denial. Loading and errors come from the controller's provider-specific properties.
+Recent sleep shows Enable Health until the authorization flow completes successfully
+in this controller session, then hides it even when no sleep is readable. Errors and
+cancellation leave setup available to retry. Completion is not proof of read permission.
+The post-authorization fetch remains; there is no manual Refresh sleep button. Empty
+results point to Health settings without implying denial. Loading and errors come
+from the controller's provider-specific properties.
 Switching back to demo invalidates outstanding provider work. See the Calendar and
 HealthKit integration docs for permission and device testing details.
 

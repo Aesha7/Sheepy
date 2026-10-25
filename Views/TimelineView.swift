@@ -20,7 +20,7 @@ struct PlanTimelineView: View {
             CardHeader(title: "Your plan", systemImage: "list.bullet.clipboard")
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(DayTime.day(plan.planDate, now: now, in: timeZone))
+                Text("Wake day: \(DayTime.day(plan.planDate, now: now, in: timeZone))")
                     .font(.headline)
                 if let zone = DayTime.zoneNote(timeZone, at: plan.planDate) {
                     Label("Times shown in \(zone)", systemImage: "globe")
@@ -107,7 +107,7 @@ private struct TimelineRow: View {
                     .foregroundStyle(Theme.secondaryText)
 
                 if let before {
-                    Text("was \(timeText(before))")
+                    Text("Previously \(timeText(before))")
                         .font(.footnote)
                         .strikethrough()
                         .foregroundStyle(Theme.secondaryText)
@@ -141,17 +141,17 @@ extension PlanStep.Kind {
     var title: String {
         switch self {
         case .wake: return "Wake up"
-        case .morningLight: return "Morning light"
-        case .caffeineCutoff: return "Last caffeine"
+        case .morningLight: return "Get morning light"
+        case .caffeineCutoff: return "Stop caffeine"
         case .windDown: return "Start winding down"
         }
     }
 
     var hint: String {
         switch self {
-        case .wake: return "Time to get up."
+        case .wake: return "Aim to get up at this time."
         case .morningLight: return "Step outside or sit by a bright window."
-        case .caffeineCutoff: return "Last coffee, tea or energy drink."
+        case .caffeineCutoff: return "Avoid caffeine from this time onward."
         case .windDown: return "Dim the lights and put screens away."
         }
     }

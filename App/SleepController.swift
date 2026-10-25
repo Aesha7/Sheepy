@@ -33,6 +33,8 @@ final class SleepController: ObservableObject {
     @Published var planningError: String?
     var calendarLoading: Bool { planningRequests.loading(for: .calendar) }
     var calendarError: String? { planningRequests.error(for: .calendar) }
+    /// Records flow completion only; HealthKit does not disclose read permission.
+    @Published private(set) var healthAuthorizationFlowCompleted = false
     var healthLoading: Bool { planningRequests.loading(for: .health) }
     var healthError: String? { planningRequests.error(for: .health) }
     private var hardware: SheepHardware
@@ -155,7 +157,10 @@ final class SleepController: ObservableObject {
         }
         do {
             try await healthService.requestAccess()
-            return planningRequests.isCurrent(token, for: .health) && planningDataMode == .live
+            try Task.checkCancellation()
+            guard planningRequests.isCurrent(token, for: .health), planningDataMode == .live else { return false }
+            healthAuthorizationFlowCompleted = true
+            return true
         } catch {
             guard planningRequests.isCurrent(token, for: .health), planningDataMode == .live else { return false }
             planningRequests.fail("Health: \(error.localizedDescription)", token: token, provider: .health)

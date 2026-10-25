@@ -23,7 +23,12 @@ typealias BluetoothSheep = SimulatedSheep
 }
 @MainActor final class HealthKitService {
     static var nextSummary: SleepSummary?
+    static var authorizationAction: () async throws -> Void = {}
+    static var summaryFetchCount = 0
     init(timeZone: TimeZone) { }
-    func requestAccess() async throws { }
-    func sleepSummary(before referenceDate: Date) async throws -> SleepSummary? { Self.nextSummary }
+    func requestAccess() async throws { try await Self.authorizationAction() }
+    func sleepSummary(before referenceDate: Date) async throws -> SleepSummary? {
+        Self.summaryFetchCount += 1
+        return Self.nextSummary
+    }
 }

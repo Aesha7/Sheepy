@@ -5,6 +5,7 @@ import Foundation
         let reference = ISO8601DateFormatter().date(from: "2026-10-24T19:00:00Z")!
         let zone = TimeZone(identifier: "America/Los_Angeles")!
         let controller = SleepController(referenceDate: reference, timeZone: zone)
+        precondition(!controller.healthAuthorizationFlowCompleted)
         let normal = controller.plan!
         let normalSleep = controller.sleepSummary!
         let explainer = OfflineExplainer()
@@ -52,6 +53,26 @@ import Foundation
         controller.resetPlanningDemo()
         controller.selectLivePlanning()
         precondition(controller.plan == nil && controller.planResult == nil)
+        precondition(!controller.healthAuthorizationFlowCompleted)
+        HealthKitService.authorizationAction = { throw SheepFailure("Setup failed") }
+        let failed = await controller.requestHealthAccess()
+        precondition(!failed && !controller.healthAuthorizationFlowCompleted && controller.healthError != nil)
+        HealthKitService.authorizationAction = { throw CancellationError() }
+        let cancelled = await controller.requestHealthAccess()
+        precondition(!cancelled && !controller.healthAuthorizationFlowCompleted)
+        HealthKitService.authorizationAction = { controller.resetPlanningDemo() }
+        let stale = await controller.requestHealthAccess()
+        precondition(!stale && !controller.healthAuthorizationFlowCompleted)
+        controller.selectLivePlanning()
+        HealthKitService.authorizationAction = {}
+        // Mirror HomeView's existing post-authorization fetch, including empty results.
+        let completed = await controller.requestHealthAccess()
+        precondition(completed && controller.healthAuthorizationFlowCompleted && controller.healthError == nil)
+        HealthKitService.nextSummary = nil
+        let fetchCount = HealthKitService.summaryFetchCount
+        if completed { await controller.refreshLiveSleepSummary(before: reference) }
+        precondition(HealthKitService.summaryFetchCount == fetchCount + 1)
+        precondition(controller.sleepSummary == nil && controller.healthAuthorizationFlowCompleted)
         CalendarService.nextEvents = []
         await controller.refreshLiveCalendarEvents(in: DateInterval(start: reference, duration: 7 * 86400), referenceDate: reference)
         precondition(controller.plan != nil && controller.planResult?.anchorEvent == nil)
@@ -62,6 +83,7 @@ import Foundation
         live.provenance = .live
         HealthKitService.nextSummary = live
         await controller.refreshLiveSleepSummary(before: reference)
+        precondition(controller.healthAuthorizationFlowCompleted)
         let livePlan = controller.plan
         controller.setDemoSleepScenario(.badNight)
         precondition(controller.sleepSummary == live && controller.plan == livePlan)
@@ -70,6 +92,7 @@ import Foundation
         var tokyo = Calendar(identifier: .gregorian)
         tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         precondition(tokyo.component(.day, from: controller.plan!.planDate) == 26)
+        print("Health setup completion, error, cancellation, stale completion and empty post-setup fetch checks passed")
         print("Controller normal → bad-night → reset, refresh, profile, provenance and error checks passed")
     }
 }
