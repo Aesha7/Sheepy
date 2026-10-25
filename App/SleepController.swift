@@ -26,6 +26,8 @@ final class SleepController: ObservableObject {
     private var patLog: PatLog?
     private var logError: String?
     private let agent = ClaudeAgent()
+    private let calendarService = CalendarService()
+    private var calendarRequestID = UUID()
 
     init(referenceDate: Date = Date(), timeZone: TimeZone = .current,
          planningDataMode: PlanningDataMode = .demo) {
@@ -45,6 +47,7 @@ final class SleepController: ObservableObject {
     }
     /// Replaces planning inputs only. Does not connect hardware or call Claude.
     func loadPlanningDemo(referenceDate: Date, timeZone: TimeZone) {
+        calendarRequestID = UUID()
         let demo = PlanningDemoInputs.make(referenceDate: referenceDate, timeZone: timeZone)
         planningDataMode = .demo
         profile = demo.profile
@@ -57,8 +60,9 @@ final class SleepController: ObservableObject {
         planningError = nil
     }
     /// Clear fixtures before future live providers populate state. Retain preferences.
-    /// This does not request permissions or implement live data loading.
+    /// This does not request permissions or start live data loading.
     func selectLivePlanning() {
+        calendarRequestID = UUID()
         planningDataMode = .live
         sleepSummary = nil
         calendarEvents = []
@@ -67,6 +71,52 @@ final class SleepController: ObservableObject {
         quests = []
         planningLoading = false
         planningError = nil
+    }
+    /// Explicit user action only. Selecting live mode does not call this method.
+    /// Returns false for denial, failure, or a request superseded by a mode change.
+    @discardableResult
+    func requestCalendarAccess() async -> Bool {
+        guard planningDataMode == .live else { return false }
+        let requestID = UUID()
+        calendarRequestID = requestID
+        planningLoading = true
+        planningError = nil
+        defer {
+            if calendarRequestID == requestID { planningLoading = false }
+        }
+        do {
+            try await calendarService.requestAccess()
+            return calendarRequestID == requestID && planningDataMode == .live
+        } catch {
+            guard calendarRequestID == requestID, planningDataMode == .live else { return false }
+            calendarEvents = []
+            plan = nil
+            planningError = error.localizedDescription
+            return false
+        }
+    }
+
+    /// Fetches authorized data only; reports errors through planningError.
+    func refreshLiveCalendarEvents(in interval: DateInterval) async {
+        guard planningDataMode == .live else { return }
+        let requestID = UUID()
+        calendarRequestID = requestID
+        planningLoading = true
+        planningError = nil
+        defer {
+            if calendarRequestID == requestID { planningLoading = false }
+        }
+        do {
+            let events = try await calendarService.events(in: interval)
+            guard calendarRequestID == requestID, planningDataMode == .live else { return }
+            calendarEvents = events
+            plan = nil
+        } catch {
+            guard calendarRequestID == requestID, planningDataMode == .live else { return }
+            calendarEvents = []
+            plan = nil
+            planningError = error.localizedDescription
+        }
     }
     private func wireHardware() {
         do { patLog = try PatLog(simulated: simulated); logError = nil }
