@@ -1,11 +1,11 @@
-# Sleep Sheep
+# Sheepy
 
-Standalone iPhone demo for the SleepSheep Arduino, with a Python USB/phone-browser
+Standalone iPhone demo for the Sheepy Arduino, with a Python USB/phone-browser
 fallback. iOS 17+, SwiftUI, CoreBluetooth, and URLSession. No Swift dependencies.
 
 ## Run the iPhone app
 
-1. Open `SleepSheep.xcodeproj` in Xcode. If starting from a fresh checkout, first run
+1. Open `Sheepy.xcodeproj` in Xcode. If starting from a fresh checkout, first run
    `python3 scripts/generate_project.py` to sync source membership while preserving the checked-in project configuration. It does not create or read credential files.
 2. In **Signing & Capabilities**, select your development team and choose a unique
    bundle identifier if needed. Select your real iPhone as the run destination.
@@ -103,7 +103,7 @@ swiftc -module-cache-path /tmp/sleep-sheep-swift-cache \
   Models/SheepProtocol.swift Services/SheepHardware.swift Tests/ProtocolChecks.swift \
   -o /tmp/sleep-sheep-protocol-checks
 /tmp/sleep-sheep-protocol-checks
-xcodebuild -project SleepSheep.xcodeproj -scheme SleepSheep \
+xcodebuild -project Sheepy.xcodeproj -scheme Sheepy \
   -sdk iphonesimulator -configuration Debug -derivedDataPath build \
   CODE_SIGNING_ALLOWED=NO build
 ```
