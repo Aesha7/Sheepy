@@ -27,10 +27,12 @@ final class SleepController: ObservableObject {
     private var logError: String?
     private let agent = ClaudeAgent()
     private let calendarService = CalendarService()
-    private var calendarRequestID = UUID()
+    private let healthService: HealthKitService
+    private var planningRequests = PlanningRequests()
 
     init(referenceDate: Date = Date(), timeZone: TimeZone = .current,
          planningDataMode: PlanningDataMode = .demo) {
+        healthService = HealthKitService(timeZone: timeZone)
         profile = SleepProfile(preferredWakeHour: 7, preferredWakeMinute: 0,
                                timeZoneID: timeZone.identifier, preparationMinutes: 60,
                                targetSleepMinutes: 480)
@@ -47,7 +49,7 @@ final class SleepController: ObservableObject {
     }
     /// Replaces planning inputs only. Does not connect hardware or call Claude.
     func loadPlanningDemo(referenceDate: Date, timeZone: TimeZone) {
-        calendarRequestID = UUID()
+        planningRequests.reset()
         let demo = PlanningDemoInputs.make(referenceDate: referenceDate, timeZone: timeZone)
         planningDataMode = .demo
         profile = demo.profile
@@ -62,7 +64,7 @@ final class SleepController: ObservableObject {
     /// Clear fixtures before future live providers populate state. Retain preferences.
     /// This does not request permissions or start live data loading.
     func selectLivePlanning() {
-        calendarRequestID = UUID()
+        planningRequests.reset()
         planningDataMode = .live
         sleepSummary = nil
         calendarEvents = []
@@ -77,21 +79,20 @@ final class SleepController: ObservableObject {
     @discardableResult
     func requestCalendarAccess() async -> Bool {
         guard planningDataMode == .live else { return false }
-        let requestID = UUID()
-        calendarRequestID = requestID
-        planningLoading = true
-        planningError = nil
+        let requestID = planningRequests.begin(.calendar)
+        publishPlanningRequests()
         defer {
-            if calendarRequestID == requestID { planningLoading = false }
+            planningRequests.finish(requestID)
+            publishPlanningRequests()
         }
         do {
             try await calendarService.requestAccess()
-            return calendarRequestID == requestID && planningDataMode == .live
+            return planningRequests.isCurrent(requestID, for: .calendar) && planningDataMode == .live
         } catch {
-            guard calendarRequestID == requestID, planningDataMode == .live else { return false }
+            guard planningRequests.isCurrent(requestID, for: .calendar), planningDataMode == .live else { return false }
             calendarEvents = []
             plan = nil
-            planningError = error.localizedDescription
+            planningRequests.fail("Calendar: \(error.localizedDescription)", token: requestID, provider: .calendar)
             return false
         }
     }
@@ -99,25 +100,73 @@ final class SleepController: ObservableObject {
     /// Fetches authorized data only; reports errors through planningError.
     func refreshLiveCalendarEvents(in interval: DateInterval) async {
         guard planningDataMode == .live else { return }
-        let requestID = UUID()
-        calendarRequestID = requestID
-        planningLoading = true
-        planningError = nil
+        let requestID = planningRequests.begin(.calendar)
+        publishPlanningRequests()
         defer {
-            if calendarRequestID == requestID { planningLoading = false }
+            planningRequests.finish(requestID)
+            publishPlanningRequests()
         }
         do {
             let events = try await calendarService.events(in: interval)
-            guard calendarRequestID == requestID, planningDataMode == .live else { return }
+            guard planningRequests.isCurrent(requestID, for: .calendar), planningDataMode == .live else { return }
             calendarEvents = events
             plan = nil
         } catch {
-            guard calendarRequestID == requestID, planningDataMode == .live else { return }
+            guard planningRequests.isCurrent(requestID, for: .calendar), planningDataMode == .live else { return }
             calendarEvents = []
             plan = nil
-            planningError = error.localizedDescription
+            planningRequests.fail("Calendar: \(error.localizedDescription)", token: requestID, provider: .calendar)
         }
     }
+    private func publishPlanningRequests() {
+        planningLoading = planningRequests.loading
+        planningError = planningRequests.error
+    }
+
+    /// Explicit user action only. true means the flow completed, not read permission.
+    @discardableResult
+    func requestHealthAccess() async -> Bool {
+        guard planningDataMode == .live else { return false }
+        let token = planningRequests.begin(.health)
+        publishPlanningRequests()
+        defer {
+            planningRequests.finish(token)
+            publishPlanningRequests()
+        }
+        do {
+            try await healthService.requestAccess()
+            return planningRequests.isCurrent(token, for: .health) && planningDataMode == .live
+        } catch {
+            guard planningRequests.isCurrent(token, for: .health), planningDataMode == .live else { return false }
+            planningRequests.fail("Health: \(error.localizedDescription)", token: token, provider: .health)
+            sleepSummary = nil
+            plan = nil
+            return false
+        }
+    }
+
+    /// Never prompts. nil sleep means no readable qualifying session, not denial.
+    func refreshLiveSleepSummary(before referenceDate: Date) async {
+        guard planningDataMode == .live else { return }
+        let token = planningRequests.begin(.health)
+        publishPlanningRequests()
+        defer {
+            planningRequests.finish(token)
+            publishPlanningRequests()
+        }
+        do {
+            let summary = try await healthService.sleepSummary(before: referenceDate)
+            guard planningRequests.isCurrent(token, for: .health), planningDataMode == .live else { return }
+            sleepSummary = summary
+            plan = nil
+        } catch {
+            guard planningRequests.isCurrent(token, for: .health), planningDataMode == .live else { return }
+            sleepSummary = nil
+            plan = nil
+            planningRequests.fail("Health: \(error.localizedDescription)", token: token, provider: .health)
+        }
+    }
+
     private func wireHardware() {
         do { patLog = try PatLog(simulated: simulated); logError = nil }
         catch { patLog = nil; logError = error.localizedDescription; self.error = "Could not load pat log: \(error.localizedDescription)" }

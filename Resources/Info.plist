@@ -20,6 +20,8 @@
 	<string>Connect to your Sleep Sheep to adjust its light and record head pats.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Read your calendar commitments to help plan your sleep and wake-up routine.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Read your sleep and heart rate to summarize your latest night of sleep on this device.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 </dict>
