@@ -11,6 +11,7 @@ struct HomeView: View {
     let fixedNow: Date?
 
     @State private var showingExplanation = false
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var showingControls = false
     @State private var reporting = false
     @State private var lastPlan: DailyPlan?
@@ -43,6 +44,7 @@ struct HomeView: View {
                     modeCard
                     // Sheepy's state is only shown when there's sleep data behind it.
                     SheepyView(state: controller.sleepSummary == nil ? nil : controller.sheepyState).card()
+                    planSection
                     SleepSummaryView(summary: controller.sleepSummary, mode: mode, timeZone: profileZone,
                                      loading: controller.healthLoading, error: controller.healthError,
                                      onEnable: { Task { await enableHealth() } },
@@ -53,13 +55,7 @@ struct HomeView: View {
                         onEnable: { Task { await enableCalendar() } },
                         onRefresh: { Task { await refreshCalendar() } }
                     )
-                    if let plan = controller.plan {
-                        PlanTimelineView(plan: plan, previous: previousPlan, now: now)
-                    } else {
-                        planPlaceholder
-                    }
                     QuestsView(quests: $controller.quests)
-                    actions
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 4)
@@ -115,12 +111,51 @@ struct HomeView: View {
             }
             .pickerStyle(.segmented)
             .disabled(reporting)
-            HintText(mode == .demo
-                     ? "Sample sleep and calendar. Try Simulate bad night near the bottom."
-                     : "Your own data. Enable Health and Calendar on their cards; nothing loads until you do.")
+            if mode == .demo {
+                HintText("Sample sleep and calendar.")
+                let buttons = typeSize.isAccessibilitySize
+                    ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 10))
+                buttons {
+                    CardButton(title: badNightActive ? "Short night" : "I slept poorly",
+                               systemImage: "moon.zzz.fill", prominent: !badNightActive) {
+                        Task { await runBadNight() }
+                    }
+                    .disabled(busy || reportBadNight == nil || badNightActive)
+                    CardButton(title: "Reset demo", systemImage: "arrow.counterclockwise", action: resetDemo)
+                        .disabled(reporting)
+                }
+                HintText(badNightHint)
+            } else {
+                HintText("Your own data. Enable Health and Calendar on their cards; nothing loads until you do. \"I slept poorly\" is part of demo mode and never changes your Health data.")
+            }
             HintText("The sheep lamp's simulation switch is separate, in Lamp & chat.")
         }
         .card()
+    }
+
+    @ViewBuilder private var planSection: some View {
+        // A failed replan keeps the last plan on screen and says so.
+        if controller.plan != nil, let error = planError {
+            VStack(alignment: .leading, spacing: 4) {
+                Label("Couldn't update your plan", systemImage: "exclamationmark.triangle")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.warning)
+                Text("Still showing your last plan. \(error)")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Theme.warning.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        if let plan = controller.plan {
+            // Enabled only when the controller retains the exact result behind this plan.
+            PlanTimelineView(plan: plan, previous: previousPlan, now: now,
+                             onExplain: controller.explanationResult(for: plan) == nil
+                                 ? nil : { showingExplanation = true })
+        } else {
+            planPlaceholder
+        }
     }
 
     private var planPlaceholder: some View {
@@ -140,53 +175,9 @@ struct HomeView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             } else {
-                Text("Your wake time, morning light, caffeine cutoff and wind-down will appear here once your plan is ready.")
+                Text("Your wake time, morning light, caffeine cutoff and wind-down will appear here once your plan is ready, with Why this plan? below them.")
                     .foregroundStyle(Theme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .card()
-    }
-
-    private var actions: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // A failed replan keeps the last plan on screen and says so.
-            if controller.plan != nil, let error = planError {
-                VStack(alignment: .leading, spacing: 4) {
-                    Label("Couldn't update your plan", systemImage: "exclamationmark.triangle")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.warning)
-                    Text("Still showing your last plan. \(error)")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .background(Theme.warning.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-
-            CardButton(title: "Why this plan?", systemImage: "questionmark.bubble") {
-                showingExplanation = true
-            }
-            .disabled(controller.plan == nil)
-            if controller.plan == nil {
-                HintText("Available once your plan is ready.")
-            }
-
-            if mode == .demo {
-                CardButton(title: badNightActive ? "Bad night simulated" : "Simulate bad night",
-                           systemImage: "moon.zzz.fill", prominent: true) {
-                    Task { await runBadNight() }
-                }
-                .disabled(busy || reportBadNight == nil || badNightActive)
-                HintText(badNightHint)
-
-                CardButton(title: "Reset demo", systemImage: "arrow.counterclockwise", action: resetDemo)
-                    .disabled(reporting)
-            } else {
-                CardButton(title: "Back to demo data", systemImage: "arrow.counterclockwise", action: resetDemo)
-                    .disabled(reporting)
-                HintText("Bad-night simulation is part of demo mode. Your Health data is never overwritten.")
             }
         }
         .card()
@@ -196,9 +187,9 @@ struct HomeView: View {
         if reportBadNight == nil { return "Replanning isn't connected yet." }
         if badNightActive {
             let slept = controller.sleepSummary.map { " (\(DayTime.duration(minutes: $0.totalAsleepMinutes)) of sleep)" } ?? ""
-            return "Showing the plan after a short night\(slept). Reset demo to go back."
+            return "Showing the plan after a short simulated night\(slept). Reset demo to go back."
         }
-        return "Replaces last night with a short simulated night. Nothing is written to Apple Health."
+        return "I slept poorly replaces last night with a short simulated night. Nothing is written to Apple Health."
     }
 
     // MARK: Actions

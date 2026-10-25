@@ -36,6 +36,34 @@ replacing settings, resources, entitlements, or schemes. It does not open creden
 The instructions below describe C's original handoff; entry-point and generator
 integration are now complete.
 
+## "Why this plan?" experience (Oct 25, on top of A's c2f9dad)
+
+- **Entry point:** a Why this plan? button inside the plan card, right under the four times. It appears only when
+  `explanationResult(for:)` returns the retained result for the displayed plan; otherwise the card says the
+  explanation isn't available. The plan card now sits directly under Sheepy, and the demo controls
+  (I slept poorly, Reset demo) are in the top card, so the whole demo flow needs little scrolling.
+- **Sheet** (`ExplanationView(controller:)`, same controller): the wake day, the four outputs with Today/Tomorrow
+  labels in the plan's time zone, where the inputs came from (demo data; or live mode with Health sleep or "no
+  readable sleep"; calendar loaded or not), then the **Offline explanation** (labeled, immediate).
+- **Claude request:** "Request Claude explanation" opens an inline confirmation that shows the exact text
+  `ClaudeService` sends (the offline explanation), notes the fixed rewrite instruction, says whether it is demo
+  data, and offers Send / Cancel. The captured `explanationRevision` is passed to `requestLiveExplanation(for:)`;
+  a plan change closes the confirmation. Nothing is sent on open, appear, mode switch, or refresh.
+- **States:** loading keeps the offline text and disables requesting; success shows **Claude response** (only for
+  `.live`) with an Offline tab to compare; failure keeps the offline text with a short message and Try again
+  (through the same confirmation). Request ownership stays in SleepController.
+- **Previews** inject `ClaudeService` with mocked transports (success, timeout, not configured). They never touch
+  the network or real credentials.
+
+### Asks for A (controller, small)
+
+1. **Tell "not configured" apart from other failures.** Today missing credentials and network errors both become the
+   same `liveExplanationError` string, so the sheet can only say "unavailable or not set up". Smallest change: a
+   `@Published private(set) var liveExplanationConfigured: Bool?` (or an enum reason) set when the request runs.
+   The sheet would then say "Claude explanations aren't configured on this build."
+2. **Cancel a running request.** A `func cancelLiveExplanation()` that cancels `explanationTask` and clears
+   `liveExplanationLoading` (without changing the revision) would let the sheet offer Cancel while loading.
+
 ## Demo polish pass (Oct 25)
 
 - **Layout:** HomeView sits in a NavigationStack with a large "Your sleep plan" title; the bar turns solid navy

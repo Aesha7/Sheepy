@@ -8,6 +8,8 @@ struct PlanTimelineView: View {
     let plan: DailyPlan
     var previous: DailyPlan? = nil
     var now: Date = .now
+    /// Opens "Why this plan?"; nil when there's no retained result to explain.
+    var onExplain: (() -> Void)? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -29,6 +31,13 @@ struct PlanTimelineView: View {
 
             ForEach(PlanStep.steps(of: plan)) { step in
                 TimelineRow(step: step, before: changedFrom(step), timeZone: timeZone, now: now)
+            }
+
+            if let onExplain {
+                CardButton(title: "Why this plan?", systemImage: "questionmark.bubble", action: onExplain)
+                    .padding(.top, 2)
+            } else {
+                HintText("The explanation for this plan isn't available.")
             }
         }
         .card()
