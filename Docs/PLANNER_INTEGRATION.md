@@ -63,35 +63,53 @@ For the default 7 AM commitment and 60-minute preparation buffer:
 These example wall times assume a normal non-DST-transition night. The planner uses
 elapsed durations across DST. All four timeline outputs come from one DailyPlan.
 
-## Contract for B's optional explanation service
+## Offline explanation contract
 
-B's original `planner-docs/planner-interface.md` proposal is superseded by the
-implemented `PlanResult` contract. There is no `PlanRequest` or `UserPreferences`
-type to add. Use `SleepProfile` and the retained result instead of recomputing a plan.
+The verified offline-only commit is `10384cb`. The later live `ClaudeService`
+commit on B's branch was intentionally not merged in this task.
 
-C currently accepts `PlanExplainer = @MainActor (DailyPlan) async throws ->
-PlanExplanation`, where `PlanExplanation` contains `text` and `isFallback`.
-An adapter should obtain `controller.explanationResult(for: displayedPlan)` once,
-then pass that captured immutable PlanResult to B's explanation service. That
-result carries the same plan, bedtime, sleepOpportunityMinutes, anchorEvent,
-isBadNightAdjusted, and hadSleepData used by the timeline. Never call makeResult
-again for explanation context. Reject nil as a stale/missing plan. If the future
-service needs input snapshots beyond these facts, add an explicit snapshot contract
-rather than reading mutable inputs after awaiting a response.
+`PlanExplainer` now accepts the exact `PlanResult`, not a DailyPlan requiring a
+second lookup or generation. HomeView passes
+`controller.plan.flatMap { controller.explanationResult(for: $0) }` to the sheet,
+so missing or mismatched retained results cannot expose an old explanation.
+The app's closure calls `OfflineExplainer().explain(result)` and wraps the text in
+`PlanExplanation(text:isFallback: true)`. No makeResult call is made by the runtime
+explanation path. The sheet request key includes the complete result and retry
+count: explanation facts changing with identical plan dates still refresh text.
+Resolved text is shown only when its key matches the current result. Missing
+results immediately show the no-plan message; canceled old requests are ignored.
 
-The explanation service is not present on B's merged branch. The existing optional
-UI therefore displays its not-connected state. It cannot block or clear the plan.
-No new network or health-data-sharing behavior is introduced. This document is the
-repository handoff for B; no external message or PR comment was sent.
+The UI explicitly labels this “Offline explanation” and states that it is generated
+on-device with no network or Claude request. It does not claim a failed live request.
+Planning and explanations both work without network access. Live explanation remains
+a separate future task.
+
+### Credential-loader source inspection (no secret values)
+
+`Services/ClaudeAgent.swift` defines the existing `AgentConfiguration.load()`.
+It resolves bundled `Secrets.plist` (source resource: `Resources/Secrets.plist`),
+expects `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`, and rejects empty values or the
+placeholder API key. `SleepController` owns a long-lived `ClaudeAgent()`; its
+`reply(...)` method loads configuration lazily when a chat request starts.
+There is no separate SDK client: it builds a URLRequest to the Anthropic Messages
+endpoint and sends it using `URLSession.shared`, setting the API-key header and
+model from the configuration.
+
+For the next coordinated live-explanation task, reuse `AgentConfiguration.load()`
+as the configuration boundary, and consider extracting shared HTTP transport from
+ClaudeAgent. Do not duplicate plist loading or reuse its mutable chat/tool history
+as explanation state. No loader/transport changes were made, no credential file was
+opened, and no live request was performed for this integration.
 
 ## Verification and device checks
 
-B's standalone runner (`planner-docs/PlannerCheck/main.swift`) passes 59 checks.
+B's standalone planner runner passes 59 checks, and the offline explainer runner passes 18 checks.
 `Tests/ControllerPlanningChecks` compiles the real controller against isolated
 service/hardware/storage stubs and verifies initial generation, normal → bad-night
 → reset, matching retained results, stale explanation rejection, profile edits,
 invalid-profile clearing, nil/empty refresh results, timezone-local tomorrow, and
-live provenance protection. The stubs are never included in the app target.
+live provenance protection. Explanation assertions cover normal → bad-night → reset,
+missing results, and changed explanation facts with unchanged plan dates. The stubs are never included in the app target.
 Existing Health/request-tracking, Calendar mapping, and hardware checks also pass.
 The full SleepSheep Debug simulator build passes.
 

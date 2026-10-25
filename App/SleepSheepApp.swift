@@ -4,7 +4,13 @@ import SwiftUI
 struct SleepSheepApp: App {
     @StateObject private var controller = SleepController()
     var body: some Scene {
-        WindowGroup { HomeView(controller: controller, reportBadNight: { controller.setDemoSleepScenario(.badNight) }) }
+        WindowGroup {
+            HomeView(controller: controller,
+                     reportBadNight: { controller.setDemoSleepScenario(.badNight) },
+                     explain: { result in
+                         PlanExplanation(text: OfflineExplainer().explain(result), isFallback: true)
+                     })
+        }
     }
 }
 

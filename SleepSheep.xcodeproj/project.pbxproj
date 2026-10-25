@@ -37,6 +37,7 @@
 		5CBCEB883D9D06B33DF015A7 /* Views/TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */; };
 		710D5B6ADA68CA4BC8D49D18 /* Services/EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 772799E63355BED11184D3CD /* Services/EventClassifier.swift */; };
 		1FE9869CBD3C95BC571827F8 /* Services/PlanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */; };
+		F5E748694638DAAE5631A4A1 /* Services/OfflineExplainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9366C6F00FAE6DB6C381C9B9 /* Services/OfflineExplainer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -71,6 +72,7 @@
 		C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TimelineView.swift"; sourceTree = SOURCE_ROOT; };
 		772799E63355BED11184D3CD /* Services/EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/EventClassifier.swift"; sourceTree = SOURCE_ROOT; };
 		0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/PlanEngine.swift"; sourceTree = SOURCE_ROOT; };
+		9366C6F00FAE6DB6C381C9B9 /* Services/OfflineExplainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/OfflineExplainer.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +97,7 @@
 		0D6E4079E36703EBD37C0072 = {
 			isa = PBXGroup;
 			children = (
+				9366C6F00FAE6DB6C381C9B9 /* Services/OfflineExplainer.swift */,
 				0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */,
 				772799E63355BED11184D3CD /* Services/EventClassifier.swift */,
 				C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */,
@@ -194,6 +197,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F5E748694638DAAE5631A4A1 /* Services/OfflineExplainer.swift in Sources */,
 				1FE9869CBD3C95BC571827F8 /* Services/PlanEngine.swift in Sources */,
 				710D5B6ADA68CA4BC8D49D18 /* Services/EventClassifier.swift in Sources */,
 				5CBCEB883D9D06B33DF015A7 /* Views/TimelineView.swift in Sources */,

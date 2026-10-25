@@ -1,28 +1,29 @@
 import SwiftUI
 
 /// What "Why this plan?" displays. Person B's explanation service produces it;
-/// `isFallback` marks B's prepared text, shown as "Offline explanation".
+/// `isFallback` labels locally generated text as "Offline explanation".
 struct PlanExplanation: Equatable {
     var text: String
     var isFallback: Bool
 }
 
 /// B's explanation service, as the UI calls it. Throwing means no explanation and no fallback.
-typealias PlanExplainer = @MainActor (DailyPlan) async throws -> PlanExplanation
+typealias PlanExplainer = @MainActor (PlanResult) async throws -> PlanExplanation
 
 // The sheet asks for an explanation of the plan it is showing. If the plan changes while it
 // is open, the request restarts and any late reply for the old plan is dropped.
 @MainActor
 struct ExplanationView: View {
-    let plan: DailyPlan?
+    let result: PlanResult?
     let explain: PlanExplainer?
 
     @State private var phase: Phase = .loading
     @State private var attempt = 0
+    @State private var resolvedRequest: RequestKey?
     @Environment(\.dismiss) private var dismiss
 
-    init(plan: DailyPlan?, explain: PlanExplainer?) {
-        self.plan = plan
+    init(result: PlanResult?, explain: PlanExplainer?) {
+        self.result = result
         self.explain = explain
     }
 
@@ -31,9 +32,11 @@ struct ExplanationView: View {
     }
 
     private struct RequestKey: Equatable {
-        let plan: DailyPlan?
+        let result: PlanResult?
         let attempt: Int
     }
+
+    private var requestKey: RequestKey { RequestKey(result: result, attempt: attempt) }
 
     var body: some View {
         NavigationStack {
@@ -57,29 +60,33 @@ struct ExplanationView: View {
         }
         .presentationDetents([.medium, .large])
         .preferredColorScheme(.dark)
-        .task(id: RequestKey(plan: plan, attempt: attempt)) { await load() }
+        .task(id: requestKey) { await load() }
     }
 
     private func load() async {
-        guard let plan, let explain else { return }
+        resolvedRequest = nil
         phase = .loading
+        let key = requestKey
+        guard let result, let explain else { return }
         do {
-            let result = try await explain(plan)
+            let explanation = try await explain(result)
             guard !Task.isCancelled else { return }   // the plan changed while this was in flight
-            phase = result.isFallback ? .fallback(result.text) : .ready(result.text)
+            phase = explanation.isFallback ? .fallback(explanation.text) : .ready(explanation.text)
+            resolvedRequest = key
         } catch {
             guard !Task.isCancelled else { return }
             phase = .failed(error.localizedDescription)
+            resolvedRequest = key
         }
     }
 
     @ViewBuilder private var content: some View {
-        if plan == nil {
+        if result == nil {
             message("There's no plan to explain yet.")
         } else if explain == nil {
             message("Explanations will appear here once the explanation service is connected.")
         } else {
-            switch phase {
+            switch resolvedRequest == requestKey ? phase : .loading {
             case .loading:
                 VStack(spacing: 12) {
                     ProgressView().tint(Theme.accent)
@@ -102,7 +109,7 @@ struct ExplanationView: View {
                         .background(Theme.warm.opacity(0.14), in: Capsule())
                     Text(text)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("A prepared explanation, shown because the live one couldn't be reached.")
+                    Text("Generated on this device from your current plan. No network or Claude request is used.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -140,7 +147,7 @@ private struct PreviewFailure: LocalizedError {
 
 #Preview("Success") {
     Color.clear.sheet(isPresented: .constant(true)) {
-        ExplanationView(plan: PreviewPlans.normal()) { _ in
+        ExplanationView(result: PreviewPlans.result()) { _ in
             try await Task.sleep(for: .seconds(1))
             return PlanExplanation(text: "Your 7 AM commitment sets the wake time; the rest of the plan works back from there.", isFallback: false)
         }
@@ -149,7 +156,7 @@ private struct PreviewFailure: LocalizedError {
 
 #Preview("Offline fallback") {
     Color.clear.sheet(isPresented: .constant(true)) {
-        ExplanationView(plan: PreviewPlans.normal()) { _ in
+        ExplanationView(result: PreviewPlans.result()) { _ in
             PlanExplanation(text: "Wake time comes from your first commitment; wind-down leaves room for your usual sleep.", isFallback: true)
         }
     }
@@ -157,12 +164,12 @@ private struct PreviewFailure: LocalizedError {
 
 #Preview("Error, no fallback") {
     Color.clear.sheet(isPresented: .constant(true)) {
-        ExplanationView(plan: PreviewPlans.normal()) { _ in throw PreviewFailure() }
+        ExplanationView(result: PreviewPlans.result()) { _ in throw PreviewFailure() }
     }
 }
 
 #Preview("Not connected yet") {
     Color.clear.sheet(isPresented: .constant(true)) {
-        ExplanationView(plan: PreviewPlans.normal(), explain: nil)
+        ExplanationView(result: PreviewPlans.result(), explain: nil)
     }
 }

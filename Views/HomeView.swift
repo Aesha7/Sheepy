@@ -70,7 +70,8 @@ struct HomeView: View {
         .fontDesign(.rounded)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showingExplanation) {
-            ExplanationView(plan: controller.plan, explain: explain)
+            ExplanationView(result: controller.plan.flatMap { controller.explanationResult(for: $0) },
+                            explain: explain)
         }
         .sheet(isPresented: $showingControls) { ContentView(controller: controller) }
         .onAppear { lastPlan = controller.plan }
