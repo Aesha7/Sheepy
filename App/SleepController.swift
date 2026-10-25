@@ -13,12 +13,26 @@ final class SleepController: ObservableObject {
     @Published var chat: [ChatEntry] = []
     @Published var stageDemo = false
     @Published private(set) var simulated: Bool
+    @Published var profile: SleepProfile
+    @Published var sleepSummary: SleepSummary?
+    @Published var calendarEvents: [CalendarEvent] = []
+    @Published var plan: DailyPlan?
+    @Published var sheepyState: SheepyState = .lively
+    @Published var quests: [Quest] = []
+    @Published private(set) var planningDataMode: PlanningDataMode
+    @Published var planningLoading = false
+    @Published var planningError: String?
     private var hardware: SheepHardware
     private var patLog: PatLog?
     private var logError: String?
     private let agent = ClaudeAgent()
 
-    init() {
+    init(referenceDate: Date = Date(), timeZone: TimeZone = .current,
+         planningDataMode: PlanningDataMode = .demo) {
+        profile = SleepProfile(preferredWakeHour: 7, preferredWakeMinute: 0,
+                               timeZoneID: timeZone.identifier, preparationMinutes: 60,
+                               targetSleepMinutes: 480)
+        self.planningDataMode = planningDataMode
         #if targetEnvironment(simulator)
         simulated = true
         hardware = SimulatedSheep()
@@ -27,6 +41,32 @@ final class SleepController: ObservableObject {
         hardware = BluetoothSheep()
         #endif
         wireHardware()
+        if planningDataMode == .demo { loadPlanningDemo(referenceDate: referenceDate, timeZone: timeZone) }
+    }
+    /// Replaces planning inputs only. Does not connect hardware or call Claude.
+    func loadPlanningDemo(referenceDate: Date, timeZone: TimeZone) {
+        let demo = PlanningDemoInputs.make(referenceDate: referenceDate, timeZone: timeZone)
+        planningDataMode = .demo
+        profile = demo.profile
+        sleepSummary = demo.sleepSummary
+        calendarEvents = demo.calendarEvents
+        plan = nil
+        sheepyState = demo.sheepyState
+        quests = demo.quests
+        planningLoading = false
+        planningError = nil
+    }
+    /// Clear fixtures before future live providers populate state. Retain preferences.
+    /// This does not request permissions or implement live data loading.
+    func selectLivePlanning() {
+        planningDataMode = .live
+        sleepSummary = nil
+        calendarEvents = []
+        plan = nil
+        sheepyState = .lively
+        quests = []
+        planningLoading = false
+        planningError = nil
     }
     private func wireHardware() {
         do { patLog = try PatLog(simulated: simulated); logError = nil }

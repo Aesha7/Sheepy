@@ -20,6 +20,9 @@
 		DBB46B3297978344C7C356E7 /* Models/SheepProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD1F562B6B2A9F28CBB9538 /* Models/SheepProtocol.swift */; };
 		E1E5A742D49EC066E5C040F6 /* Resources/Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = 15716B489C34E5BEF46A81C0 /* Resources/Secrets.plist */; };
 		FF8134F52AB18EFABB5AAB34 /* App/SleepSheepApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CF2525326A80550CA38EBE /* App/SleepSheepApp.swift */; };
+		F60C78B775C986C152BE0DA7 /* Models/PlanningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565DD7773D83BABABA0D23A4 /* Models/PlanningModels.swift */; };
+		5A634717C10BC3C92D532C4F /* Models/PlanningDemoInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE00984D7CF676C4B52C7F /* Models/PlanningDemoInputs.swift */; };
+		1E4BE9D12086D602AE31636B /* Services/PlanningInterfaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019913582139845C61AD80D6 /* Services/PlanningInterfaces.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +40,9 @@
 		DBD1F562B6B2A9F28CBB9538 /* Models/SheepProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SheepProtocol.swift; sourceTree = SOURCE_ROOT; };
 		E59AAF598141FE4DB3FA29F2 /* Services/ClaudeAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ClaudeAgent.swift; sourceTree = SOURCE_ROOT; };
 		FDBCBD753789BDB9819C1E01 /* Models/SleepProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SleepProfile.swift; sourceTree = SOURCE_ROOT; };
+		565DD7773D83BABABA0D23A4 /* Models/PlanningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningModels.swift; sourceTree = SOURCE_ROOT; };
+		67DE00984D7CF676C4B52C7F /* Models/PlanningDemoInputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningDemoInputs.swift; sourceTree = SOURCE_ROOT; };
+		019913582139845C61AD80D6 /* Services/PlanningInterfaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PlanningInterfaces.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +71,9 @@
 				42CF2525326A80550CA38EBE /* App/SleepSheepApp.swift */,
 				DBD1F562B6B2A9F28CBB9538 /* Models/SheepProtocol.swift */,
 				FDBCBD753789BDB9819C1E01 /* Models/SleepProfile.swift */,
+				019913582139845C61AD80D6 /* Services/PlanningInterfaces.swift */,
+				67DE00984D7CF676C4B52C7F /* Models/PlanningDemoInputs.swift */,
+				565DD7773D83BABABA0D23A4 /* Models/PlanningModels.swift */,
 				324CB8A1CDA0EBB988BB8594 /* Services/BluetoothSheep.swift */,
 				7BEF42ADE48BDAD926958EDC /* Services/CalendarService.swift */,
 				E59AAF598141FE4DB3FA29F2 /* Services/ClaudeAgent.swift */,
@@ -147,6 +156,9 @@
 				FF8134F52AB18EFABB5AAB34 /* App/SleepSheepApp.swift in Sources */,
 				DBB46B3297978344C7C356E7 /* Models/SheepProtocol.swift in Sources */,
 				1B2F32AA3A90107E0B880E39 /* Models/SleepProfile.swift in Sources */,
+				1E4BE9D12086D602AE31636B /* Services/PlanningInterfaces.swift in Sources */,
+				5A634717C10BC3C92D532C4F /* Models/PlanningDemoInputs.swift in Sources */,
+				F60C78B775C986C152BE0DA7 /* Models/PlanningModels.swift in Sources */,
 				4DCCBD7EDF68E342CD6F6F21 /* Services/BluetoothSheep.swift in Sources */,
 				ADD8FDC3749E6EB8568A3C30 /* Services/CalendarService.swift in Sources */,
 				B9DC9D537ED07401A43784C9 /* Services/ClaudeAgent.swift in Sources */,
