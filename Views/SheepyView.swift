@@ -1,58 +1,62 @@
 import SwiftUI
 import UIKit
 
-// Renders the SheepyState it is given. Which state applies is decided outside the view.
-// Uses D's images when the asset catalog has them (sheepy-lively, sheepy-sleepy,
-// sheepy-sleeping, sheepy-drained); otherwise a simple drawn placeholder, labeled as such.
+// Renders the SheepyState it is given; which state applies is decided outside the view.
+// nil means there's no sleep data to base a state on, so Sheepy is shown neutrally instead
+// of implying the user is rested or tired. Uses D's images when the asset catalog has them
+// (sheepy-lively, sheepy-sleepy, sheepy-sleeping, sheepy-drained); otherwise a drawn sheep.
 struct SheepyView: View {
-    let state: SheepyState
-    /// One short sentence; defaults to placeholder copy per state until D's final copy lands.
+    let state: SheepyState?
+    /// One short sentence; defaults to copy per state until D's final copy lands.
     var status: String? = nil
 
-    private var statusText: String { status ?? state.defaultStatus }
-
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
+
+    private var title: String { state?.label ?? "Sheepy" }
+    private var statusText: String {
+        status ?? state?.defaultStatus ?? "No recent sleep to go on yet, so Sheepy isn't guessing how you slept."
+    }
 
     var body: some View {
-        VStack(spacing: 10) {
+        // Compact row so the sleep summary and plan stay near the top; stacks at accessibility sizes.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: 14))
+        layout {
             ZStack {
                 artwork
                     .id(state)
                     .transition(reduceMotion ? .opacity : .scale(scale: 0.9).combined(with: .opacity))
             }
-            .frame(width: 180, height: 150)
+            .frame(width: 92, height: 72)
             .accessibilityHidden(true)
 
-            Text(state.label)
-                .font(.title2.weight(.bold))
-                .foregroundStyle(Theme.text)
-
-            if !statusText.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(Theme.text)
                 Text(statusText)
-                    .font(.body)
+                    .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
-                    .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity)
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.25), value: state)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Sheepy is \(state.label.lowercased()). \(statusText)")
+        .accessibilityLabel(state.map { "Sheepy is \($0.label.lowercased()). \(statusText)" } ?? "Sheepy. \(statusText)")
     }
 
     @ViewBuilder private var artwork: some View {
-        if let image = UIImage(named: state.assetName) {
+        if let state, let image = UIImage(named: state.assetName) {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
         } else {
-            VStack(spacing: 2) {
-                PlaceholderSheep(state: state)
-                Text("Placeholder art")
-                    .font(.caption2)
-                    .foregroundStyle(Theme.secondaryText.opacity(0.7))
-            }
+            PlaceholderSheep(state: state)
+                .scaleEffect(0.54)
+                .frame(width: 92, height: 72)
         }
     }
 }
@@ -86,9 +90,9 @@ extension SheepyState {
     }
 }
 
-/// Temporary drawn sheep until D's images land: wool, face, and eyes/pose per state.
+/// Drawn sheep used until D's images land: wool, face, and eyes/pose per state (nil = neutral).
 private struct PlaceholderSheep: View {
-    let state: SheepyState
+    let state: SheepyState?
 
     private let face = Color(red: 0.23, green: 0.20, blue: 0.27)
 
@@ -107,12 +111,12 @@ private struct PlaceholderSheep: View {
         .rotationEffect(.degrees(tilt))
         .scaleEffect(x: 1, y: state == .drained ? 0.93 : 1, anchor: .bottom)
         .offset(y: state == .lively ? -4 : 0)
-        .saturation(state == .drained ? 0.35 : 1)
+        .saturation(state == .drained ? 0.35 : state == nil ? 0.6 : 1)
     }
 
     private var tilt: Double {
         switch state {
-        case .lively: return 0
+        case nil, .lively: return 0
         case .sleepy: return 5
         case .sleeping: return 8
         case .drained: return -7
@@ -135,6 +139,8 @@ private struct PlaceholderSheep: View {
         HStack(spacing: 16) {
             ForEach(0..<2, id: \.self) { side in
                 switch state {
+                case nil:
+                    Circle().fill(Theme.text).frame(width: 8, height: 8)
                 case .lively:
                     Circle().fill(Theme.text).frame(width: 10, height: 10)
                 case .sleepy:
@@ -156,6 +162,8 @@ private struct PlaceholderSheep: View {
         case .lively:
             SmileCurve().stroke(Theme.text, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .frame(width: 18, height: 8)
+        case nil:
+            Capsule().fill(Theme.text.opacity(0.8)).frame(width: 12, height: 3)
         case .sleepy, .sleeping:
             Capsule().fill(Theme.text.opacity(0.8)).frame(width: 8, height: 3)
         case .drained:
@@ -189,7 +197,8 @@ private struct SmileCurve: Shape {
 #Preview("All four states") {
     ScrollView {
         VStack(spacing: 24) {
-            ForEach(SheepyState.allCases, id: \.self) { SheepyView(state: $0) }
+            ForEach(SheepyState.allCases, id: \.self) { SheepyView(state: $0).card() }
+            SheepyView(state: nil).card()
         }
         .padding(16)
     }

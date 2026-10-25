@@ -26,6 +26,24 @@ replacing settings, resources, entitlements, or schemes. It does not open creden
 The instructions below describe C's original handoff; entry-point and generator
 integration are now complete.
 
+## Demo polish pass (Oct 25)
+
+- **Layout:** HomeView sits in a NavigationStack with a large "Your sleep plan" title; the bar turns solid navy
+  once content scrolls, so text no longer runs under the status bar or Dynamic Island. **Lamp & chat** is a toolbar
+  button that opens `ContentView` with the same controller.
+- **Demo/Live switch:** a segmented control in the first card. Demo calls `resetPlanningDemo()`; Live calls
+  `selectLivePlanning()` only (no prompts; each card's Enable button asks for access). Hardware simulation stays in
+  Lamp & chat.
+- **Sheepy:** a compact row (stacks at accessibility text sizes); no "Placeholder art" caption. With no sleep summary
+  the card is neutral ("Sheepy", no state) instead of showing the controller's default `.lively`.
+- **Source badges:** "Demo data", "Live mode" (provider selected, nothing loaded), or a checked provider name
+  ("Apple Health", "Calendar") only when data actually came back. An empty Health result is never shown as denial.
+- **Calendar:** events that have ended are hidden; events under way (including multi-day all-day events) are listed
+  under "Happening now" with when they end; "Next commitment" is the first event that hasn't started. Display-only:
+  the planner still receives every event.
+- **Actions card:** Why this plan? (with a hint when there's no plan yet); in demo, Simulate bad night (disabled with
+  an explanation once active) and Reset demo; in live, Back to demo data.
+
 ## For A: adding it to the app
 
 1. `scripts/generate_project.py` only collects Swift files from `App`, `Models` and `Services`. Add `"Views"` to that
@@ -97,14 +115,14 @@ planner should generate a fresh plan after it.
 | File | What it is |
 |---|---|
 | `HomeView.swift` | The scrolling dashboard, the calendar actions, and previews (including a clickable connected flow) |
-| `CalendarCard.swift` | Next commitment, coming-up list, Enable Calendar / Refresh / Settings, loading and errors |
+| `CalendarCard.swift` | Next commitment, coming up, happening now; Enable Calendar / Refresh / Settings, loading and errors |
 | `SleepSummaryView.swift` | Last night's sleep |
 | `TimelineView.swift` | `PlanTimelineView` (named so it doesn't hide SwiftUI's `TimelineView`); marks steps that changed since the previous plan with "Updated · was …" |
-| `SheepyView.swift` | Four states, D's images if present, otherwise a labeled placeholder drawing; respects Reduce Motion |
+| `SheepyView.swift` | Compact card: four states plus a neutral no-data look, D's images if present, otherwise a drawn sheep; respects Reduce Motion |
 | `QuestsView.swift` | Quests with progress and 44 pt tap targets |
 | `ExplanationView.swift` | Loading / success / "Offline explanation" / error + retry / not connected |
 | `DashboardStyle.swift` | Theme, cards, source badge, date/time formatting in a given time zone |
-| `PreviewPlans.swift` | Fixed sample `DailyPlan`s for previews only, until B's planner exists |
+| `PreviewPlans.swift` | Fixed sample `DailyPlan`s used only inside `#Preview` blocks; the app's plans come from PlanEngine |
 
 ## Demo run (with D)
 

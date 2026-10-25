@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SleepSummaryView: View {
     let summary: SleepSummary?
-    /// The app's planning mode, used for the badge when there is no summary to label.
+    /// The app's planning mode; live mode alone doesn't mean Health returned anything.
     let mode: PlanningDataMode
     let timeZone: TimeZone
     var loading = false
@@ -10,26 +10,33 @@ struct SleepSummaryView: View {
     var onEnable: (() -> Void)? = nil
     var onRefresh: (() -> Void)? = nil
 
+    private var badge: SourceBadge.Kind {
+        guard let summary else { return .of(mode: mode, loadedFrom: nil) }
+        return summary.provenance == .live ? .loaded("Apple Health") : .demo
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            CardHeader(title: "Recent sleep", systemImage: "bed.double.fill", source: summary?.provenance ?? mode)
+            CardHeader(title: "Recent sleep", systemImage: "bed.double.fill", badge: badge)
 
             if loading {
-                HStack { ProgressView(); Text("Loading sleep data…") }
-                    .foregroundStyle(Theme.secondaryText)
+                HStack(spacing: 10) {
+                    ProgressView().tint(Theme.accent)
+                    Text("Loading sleep data…")
+                }
+                .foregroundStyle(Theme.secondaryText)
             } else if let error {
                 Label(error, systemImage: "exclamationmark.triangle")
+                    .font(.subheadline)
                     .foregroundStyle(Theme.warning)
+                    .fixedSize(horizontal: false, vertical: true)
             } else if let summary {
                 Text(DayTime.duration(minutes: summary.totalAsleepMinutes))
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .contentTransition(.numericText())
                     .accessibilityLabel("Slept \(DayTime.duration(minutes: summary.totalAsleepMinutes))")
 
-                Text(DayTime.shortDay(summary.sleepEnd, in: timeZone))
-                    .font(.subheadline).foregroundStyle(Theme.secondaryText)
-
-                Text("\(DayTime.time(summary.sleepStart, in: timeZone)) – \(DayTime.time(summary.sleepEnd, in: timeZone))")
+                Text("\(DayTime.shortDay(summary.sleepEnd, in: timeZone)) · \(DayTime.time(summary.sleepStart, in: timeZone)) – \(DayTime.time(summary.sleepEnd, in: timeZone))")
                     .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
 
@@ -39,39 +46,48 @@ struct SleepSummaryView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
             } else {
-                // nil means no sleep data was available, not that access was refused.
-                Text("No readable recent overnight sleep.")
+                // nil means no readable qualifying sleep, not that access was refused.
+                Text("No recent overnight sleep to show.")
                     .foregroundStyle(Theme.secondaryText)
             }
+
             if let onEnable {
-                HStack {
-                    Button("Enable Health", action: onEnable)
-                        .buttonStyle(.borderedProminent)
-                    if mode == .live, let onRefresh {
-                        Button("Refresh sleep", action: onRefresh).buttonStyle(.bordered)
-                    }
-                }
-                .disabled(loading)
-                Text(mode == .demo
-                     ? "Switches to live data and asks to read Sleep and Heart Rate."
-                     : "Read access is controlled in Health. No readable data can also mean no recent recorded sleep.")
-                    .font(.caption).foregroundStyle(Theme.secondaryText)
+                controls(onEnable: onEnable)
             }
         }
         .card()
+    }
+
+    @ViewBuilder private func controls(onEnable: @escaping () -> Void) -> some View {
+        HStack(spacing: 10) {
+            if mode == .live, let onRefresh {
+                CardButton(title: "Refresh sleep", systemImage: "arrow.clockwise", action: onRefresh)
+            }
+            CardButton(title: "Enable Health", systemImage: "heart.text.square", prominent: mode == .demo || summary == nil,
+                       action: onEnable)
+        }
+        .disabled(loading)
+        .padding(.top, 4)
+
+        HintText(mode == .demo
+                 ? "Enable Health switches to live mode and asks to read Sleep and Heart Rate."
+                 : "Read access is managed in the Health app. An empty result can also mean no recent recorded sleep.")
     }
 }
 
 #Preview("Sleep card states") {
     let demo = PlanningDemoInputs.make(referenceDate: .now, timeZone: .current)
-    var noHeartRate = demo.sleepSummary
-    noHeartRate.averageHeartRateBPM = nil
-    noHeartRate.provenance = .live
+    var live = demo.sleepSummary
+    live.averageHeartRateBPM = nil
+    live.provenance = .live
     return ScrollView {
         VStack(spacing: 16) {
-            SleepSummaryView(summary: demo.sleepSummary, mode: .demo, timeZone: .current)
-            SleepSummaryView(summary: noHeartRate, mode: .live, timeZone: .current)
-            SleepSummaryView(summary: nil, mode: .live, timeZone: .current)
+            SleepSummaryView(summary: demo.sleepSummary, mode: .demo, timeZone: .current, onEnable: {})
+            SleepSummaryView(summary: live, mode: .live, timeZone: .current, onEnable: {}, onRefresh: {})
+            SleepSummaryView(summary: nil, mode: .live, timeZone: .current, onEnable: {}, onRefresh: {})
+            SleepSummaryView(summary: nil, mode: .live, timeZone: .current, loading: true, onEnable: {}, onRefresh: {})
+            SleepSummaryView(summary: nil, mode: .live, timeZone: .current,
+                             error: "Health: Health data is unavailable on this device.", onEnable: {}, onRefresh: {})
         }
         .padding(16)
     }

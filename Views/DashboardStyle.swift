@@ -30,7 +30,7 @@ extension View {
 struct CardHeader: View {
     let title: String
     let systemImage: String
-    var source: PlanningDataMode? = nil
+    var badge: SourceBadge.Kind? = nil
 
     var body: some View {
         // Title and badge sit side by side, and stack when larger text needs the room.
@@ -38,11 +38,11 @@ struct CardHeader: View {
             HStack(alignment: .firstTextBaseline) {
                 titleLabel
                 Spacer(minLength: 8)
-                if let source { SourceBadge(mode: source) }
+                if let badge { SourceBadge(kind: badge) }
             }
             VStack(alignment: .leading, spacing: 6) {
                 titleLabel
-                if let source { SourceBadge(mode: source) }
+                if let badge { SourceBadge(kind: badge) }
             }
         }
     }
@@ -55,23 +55,98 @@ struct CardHeader: View {
     }
 }
 
-/// Labels each card's data as real or demo. Sleep and calendar get separate badges,
-/// because one can be live while the other is still a fixture.
+/// Says where a card's data comes from. Live mode only means the provider was selected;
+/// the checked badge appears only when that provider actually returned data.
+/// Sleep and calendar get separate badges, because one can be live while the other isn't loaded.
 struct SourceBadge: View {
-    let mode: PlanningDataMode
+    enum Kind: Equatable {
+        case demo
+        case liveMode
+        case loaded(String)   // provider name, e.g. "Apple Health"
+
+        static func of(mode: PlanningDataMode, loadedFrom provider: String?) -> Kind {
+            guard mode == .live else { return .demo }
+            return provider.map { .loaded($0) } ?? .liveMode
+        }
+    }
+
+    let kind: Kind
 
     var body: some View {
-        Label(mode == .live ? "Live data" : "Demo data",
-              systemImage: mode == .live ? "checkmark.circle.fill" : "wand.and.stars")
+        Label(text, systemImage: icon)
             .font(.caption.weight(.semibold))
             .foregroundStyle(color)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(color.opacity(0.14), in: Capsule())
-            .accessibilityLabel(mode == .live ? "Source: live data" : "Source: demo data")
+            .accessibilityLabel("Source: \(text)")
     }
 
-    private var color: Color { mode == .live ? Theme.accent : Theme.warm }
+    private var text: String {
+        switch kind {
+        case .demo: return "Demo data"
+        case .liveMode: return "Live mode"
+        case .loaded(let provider): return provider
+        }
+    }
+
+    private var icon: String {
+        switch kind {
+        case .demo: return "wand.and.stars"
+        case .liveMode: return "antenna.radiowaves.left.and.right"
+        case .loaded: return "checkmark.circle.fill"
+        }
+    }
+
+    private var color: Color {
+        switch kind {
+        case .demo: return Theme.warm
+        case .liveMode: return Theme.secondaryText
+        case .loaded: return Theme.accent
+        }
+    }
+}
+
+/// The one button look used inside cards: full width, 44 pt tall, lavender.
+struct CardButton: View {
+    let title: String
+    let systemImage: String
+    var prominent = false
+    let action: () -> Void
+
+    var body: some View {
+        if prominent {
+            Button(action: action) { label.foregroundStyle(Theme.background) }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.roundedRectangle(radius: 12))
+                .tint(Theme.accent)
+        } else {
+            Button(action: action) { label }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.roundedRectangle(radius: 12))
+                .tint(Theme.accent)
+        }
+    }
+
+    private var label: some View {
+        Label(title, systemImage: systemImage)
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity, minHeight: 44)
+    }
+}
+
+/// Short secondary text under a control, e.g. why it's disabled.
+struct HintText: View {
+    let text: String
+
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text)
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+            .fixedSize(horizontal: false, vertical: true)
+    }
 }
 
 /// Formatting only. Every date is shown in the time zone its data came with.

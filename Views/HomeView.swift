@@ -1,8 +1,8 @@
 import SwiftUI
 
-// The dashboard. All data comes from SleepController; the two actions it can't do yet
-// (replanning after a bad night, explaining a plan) come in as closures from A/B.
-// Only presentation details live here: the open sheet and the plan shown before the last change.
+// The dashboard. All data comes from SleepController; the bad-night action and the plan
+// explainer come in as closures from the app. Only presentation details live here: open
+// sheets and the plan shown before the last change.
 @MainActor
 struct HomeView: View {
     @ObservedObject var controller: SleepController
@@ -36,36 +36,55 @@ struct HomeView: View {
     private var mode: PlanningDataMode { controller.planningDataMode }
     private var profileZone: TimeZone { DayTime.zone(controller.profile.timeZoneID) }
     private var busy: Bool { reporting || controller.planningLoading }
-    private var replanning: Bool { reporting }
     private var planError: String? { controller.plannerError }
+    private var badNightActive: Bool { controller.demoSleepScenario == .badNight }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                header
-                SheepyView(state: controller.sheepyState).card()
-                SleepSummaryView(summary: controller.sleepSummary, mode: mode, timeZone: profileZone,
-                                 loading: controller.healthLoading, error: controller.healthError,
-                                 onEnable: { Task { await enableHealth() } },
-                                 onRefresh: { Task { await refreshHealth() } })
-                CalendarCard(
-                    events: controller.calendarEvents, mode: mode, fallbackZone: profileZone, now: now,
-                    loading: calendarBusy, error: calendarError, connected: calendarConnected,
-                    onEnable: { Task { await enableCalendar() } },
-                    onRefresh: { Task { await refreshCalendar() } }
-                )
-                if let plan = controller.plan {
-                    PlanTimelineView(plan: plan, previous: previousPlan, now: now)
-                } else {
-                    planPlaceholder
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 14) {
+                    modeCard
+                    // Sheepy's state is only shown when there's sleep data behind it.
+                    SheepyView(state: controller.sleepSummary == nil ? nil : controller.sheepyState).card()
+                    SleepSummaryView(summary: controller.sleepSummary, mode: mode, timeZone: profileZone,
+                                     loading: controller.healthLoading, error: controller.healthError,
+                                     onEnable: { Task { await enableHealth() } },
+                                     onRefresh: { Task { await refreshHealth() } })
+                    CalendarCard(
+                        events: controller.calendarEvents, mode: mode, fallbackZone: profileZone, now: now,
+                        loading: calendarBusy, error: calendarError, connected: calendarConnected,
+                        onEnable: { Task { await enableCalendar() } },
+                        onRefresh: { Task { await refreshCalendar() } }
+                    )
+                    if let plan = controller.plan {
+                        PlanTimelineView(plan: plan, previous: previousPlan, now: now)
+                    } else {
+                        planPlaceholder
+                    }
+                    QuestsView(quests: $controller.quests)
+                    actions
                 }
-                QuestsView(quests: $controller.quests)
-                actions
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 32)
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 32)
+            .background(Theme.background.ignoresSafeArea())
+            .navigationTitle("Your sleep plan")
+            .navigationBarTitleDisplayMode(.large)
+            // A solid bar appears once content scrolls, so text never runs under the status bar.
+            .toolbarBackground(Theme.background, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingControls = true } label: {
+                        Label("Lamp & chat", systemImage: "lightbulb")
+                            .labelStyle(.titleAndIcon)
+                    }
+                    .tint(Theme.accent)
+                    .accessibilityHint("Opens the sheep lamp controls and chat")
+                }
+            }
         }
-        .background(Theme.background.ignoresSafeArea())
         .foregroundStyle(Theme.text)
         .fontDesign(.rounded)
         .preferredColorScheme(.dark)
@@ -84,25 +103,27 @@ struct HomeView: View {
 
     // MARK: Sections
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                ModeBadge(mode: mode)
-                Spacer()
-                Button { showingControls = true } label: {
-                    Label("Lamp & chat", systemImage: "lightbulb")
-                }
-                .buttonStyle(.bordered)
-            }
-            Text("Your sleep plan")
-                .font(.largeTitle.weight(.bold))
-                .accessibilityAddTraits(.isHeader)
+    private var modeBinding: Binding<PlanningDataMode> {
+        Binding(get: { controller.planningDataMode }, set: { switchMode(to: $0) })
+    }
+
+    private var modeCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
             Text(now.formatted(.dateTime.weekday(.wide).month(.wide).day()))
-                .font(.subheadline)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.secondaryText)
+            Picker("Planning data", selection: modeBinding) {
+                Text("Demo").tag(PlanningDataMode.demo)
+                Text("Live").tag(PlanningDataMode.live)
+            }
+            .pickerStyle(.segmented)
+            .disabled(reporting)
+            HintText(mode == .demo
+                     ? "Sample sleep and calendar. Try Simulate bad night near the bottom."
+                     : "Your own data. Enable Health and Calendar on their cards; nothing loads until you do.")
+            HintText("The sheep lamp's simulation switch is separate, in Lamp & chat.")
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 8)
+        .card()
     }
 
     private var planPlaceholder: some View {
@@ -131,7 +152,7 @@ struct HomeView: View {
     }
 
     private var actions: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             // A failed replan keeps the last plan on screen and says so.
             if controller.plan != nil, let error = planError {
                 VStack(alignment: .leading, spacing: 4) {
@@ -147,66 +168,56 @@ struct HomeView: View {
                 .background(Theme.warning.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
-            Button {
-                Task { await runBadNight() }
-            } label: {
-                HStack(spacing: 10) {
-                    if replanning {
-                        ProgressView().tint(Theme.background)
-                        Text("Updating your plan…")
-                    } else {
-                        Image(systemName: "moon.zzz.fill")
-                        Text(mode == .demo ? "Simulate bad night" : "I slept poorly")
-                    }
-                }
-                .font(.headline)
-                .foregroundStyle(Theme.background)
-                .frame(maxWidth: .infinity, minHeight: 50)
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.roundedRectangle(radius: 16))
-            .tint(Theme.accent)
-            .disabled(busy || reportBadNight == nil || mode != .demo)
-
-            if reportBadNight == nil {
-                caption("Replanning connects when the planner is ready.")
-            } else if mode != .demo {
-                caption("Bad-night simulation is available only with demo data. Live sleep comes from Health.")
-            } else if mode == .demo {
-                caption("Demo: simulates a short night. Nothing is written to Apple Health.")
-            }
-
-            Button {
+            CardButton(title: "Why this plan?", systemImage: "questionmark.bubble") {
                 showingExplanation = true
-            } label: {
-                Label("Why this plan?", systemImage: "questionmark.bubble")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 50)
             }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.roundedRectangle(radius: 16))
-            .tint(Theme.accent)
             .disabled(controller.plan == nil)
-
-            Button(action: resetDemo) {
-                Label(mode == .demo ? "Reset demo" : "Back to demo data", systemImage: "arrow.counterclockwise")
-                    .font(.subheadline)
-                    .frame(minHeight: 44)
+            if controller.plan == nil {
+                HintText("Available once your plan is ready.")
             }
-            .tint(Theme.secondaryText)
-            .disabled(reporting)
+
+            if mode == .demo {
+                CardButton(title: badNightActive ? "Bad night simulated" : "Simulate bad night",
+                           systemImage: "moon.zzz.fill", prominent: true) {
+                    Task { await runBadNight() }
+                }
+                .disabled(busy || reportBadNight == nil || badNightActive)
+                HintText(badNightHint)
+
+                CardButton(title: "Reset demo", systemImage: "arrow.counterclockwise", action: resetDemo)
+                    .disabled(reporting)
+            } else {
+                CardButton(title: "Back to demo data", systemImage: "arrow.counterclockwise", action: resetDemo)
+                    .disabled(reporting)
+                HintText("Bad-night simulation is part of demo mode. Your Health data is never overwritten.")
+            }
         }
-        .padding(.top, 4)
+        .card()
     }
 
-    private func caption(_ text: String) -> some View {
-        Text(text)
-            .font(.footnote)
-            .foregroundStyle(Theme.secondaryText)
-            .multilineTextAlignment(.center)
+    private var badNightHint: String {
+        if reportBadNight == nil { return "Replanning isn't connected yet." }
+        if badNightActive {
+            let slept = controller.sleepSummary.map { " (\(DayTime.duration(minutes: $0.totalAsleepMinutes)) of sleep)" } ?? ""
+            return "Showing the plan after a short night\(slept). Reset demo to go back."
+        }
+        return "Replaces last night with a short simulated night. Nothing is written to Apple Health."
     }
 
     // MARK: Actions
+
+    private func switchMode(to newMode: PlanningDataMode) {
+        guard newMode != mode, !reporting else { return }
+        switch newMode {
+        case .demo:
+            resetDemo()
+        case .live:
+            // Selecting live mode never prompts; each card's Enable button asks for access.
+            calendarConnected = false
+            calendarRun += 1
+            controller.selectLivePlanning()
+        }
+    }
 
     private func runBadNight() async {
         guard let reportBadNight, !busy, mode == .demo else { return }
@@ -272,60 +283,25 @@ struct HomeView: View {
     }
 }
 
-private struct ModeBadge: View {
-    let mode: PlanningDataMode
+// MARK: Previews (the planner runs for real; no sample plans are installed)
 
-    var body: some View {
-        Label(mode == .demo ? "Demo mode" : "Live",
-              systemImage: mode == .demo ? "wand.and.stars" : "dot.radiowaves.left.and.right")
-            .font(.caption.weight(.bold))
-            .foregroundStyle(mode == .demo ? Theme.warm : Theme.accent)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background((mode == .demo ? Theme.warm : Theme.accent).opacity(0.15), in: Capsule())
-    }
-}
-
-// MARK: Previews (preview-only sample plans; the app uses Person B's planner)
-
-#Preview("Demo, plan not ready") {
-    HomeView(controller: SleepController())
-}
-
-#Preview("Connected flow (tap the buttons)") {
+#Preview("Demo") {
     let controller = SleepController()
-    controller.plan = PreviewPlans.normal()
-    return HomeView(
-        controller: controller,
-        reportBadNight: {
-            controller.planningLoading = true
-            try? await Task.sleep(for: .seconds(1.2))
-            controller.plan = PreviewPlans.badNight()
-            controller.sheepyState = .drained
-            controller.planningLoading = false
-        },
-        explain: { _ in
-            try await Task.sleep(for: .seconds(0.8))
-            return PlanExplanation(text: "Preview text. Your 7 AM commitment sets the wake time; the rest works back from there.",
-                                   isFallback: true)
-        }
-    )
+    return HomeView(controller: controller, reportBadNight: { controller.setDemoSleepScenario(.badNight) })
+}
+
+#Preview("Demo, bad night") {
+    let controller = SleepController()
+    controller.setDemoSleepScenario(.badNight)
+    return HomeView(controller: controller, reportBadNight: { controller.setDemoSleepScenario(.badNight) })
 }
 
 #Preview("Live, no data yet") {
     HomeView(controller: SleepController(planningDataMode: .live))
 }
 
-#Preview("Replanning failed") {
-    let controller = SleepController()
-    controller.plan = PreviewPlans.normal()
-    controller.planningError = "The planner didn't respond."
-    return HomeView(controller: controller, reportBadNight: {})
-}
-
 #Preview("Long title, larger text") {
     let controller = SleepController()
-    controller.plan = PreviewPlans.normal()
     if var event = controller.calendarEvents.first {
         event.title = "Organic Chemistry II Midterm Review Session with the Teaching Assistants in Room 120"
         controller.calendarEvents = [event]
