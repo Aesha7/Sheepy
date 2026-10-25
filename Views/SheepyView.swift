@@ -161,11 +161,13 @@ private struct SheepyFigure: View {
                     .frame(width: 26, height: 26)
                     .offset(Self.bump(i, of: 16))
             }
-            ForEach(0..<Self.curls.count, id: \.self) { i in
-                Circle()
-                    .stroke(SheepColors.woolShade.opacity(0.7), lineWidth: 1.5)
-                    .frame(width: 14, height: 14)
-                    .offset(x: Self.curls[i].0, y: Self.curls[i].1)
+            ForEach(Self.puffs.indices, id: \.self) { i in
+                ZStack {
+                    Circle().fill(SheepColors.woolShade.opacity(0.6)).offset(x: 1, y: 1.6)
+                    Circle().fill(SheepColors.wool)
+                }
+                .frame(width: 13, height: 13)
+                .offset(x: Self.puffs[i].x, y: Self.puffs[i].y)
             }
         }
         .offset(y: 14)
@@ -177,10 +179,22 @@ private struct SheepyFigure: View {
         return CGSize(width: cos(angle) * 60, height: sin(angle) * 46)
     }
 
-    /// Wool curl texture on the visible parts of the fleece.
-    private static let curls: [(Double, Double)] = [
-        (-46, -8), (-38, 16), (-20, 32), (0, 38), (20, 32), (38, 16), (46, -8), (-52, 6), (52, 6),
-    ]
+    /// Overlapping puffs with a soft lower shadow give the fleece the print's bumpy wool.
+    /// Staggered rows inside the fleece, skipping the area hidden behind the face.
+    private static let puffs: [CGPoint] = {
+        var points: [CGPoint] = []
+        for row in -3...3 {
+            let y = Double(row) * 11
+            let shift = row % 2 == 0 ? 0 : 6.5
+            for column in -5...5 {
+                let x = Double(column) * 13 + shift
+                guard (x / 54) * (x / 54) + (y / 40) * (y / 40) <= 1 else { continue }
+                guard !(abs(x) < 34 && y < 18) else { continue }
+                points.append(CGPoint(x: x, y: y))
+            }
+        }
+        return points
+    }()
 
     private var ears: some View {
         ZStack {
