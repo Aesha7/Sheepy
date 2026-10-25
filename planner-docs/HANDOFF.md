@@ -1,3 +1,7 @@
+> Current integration: plan explanations are entirely offline. The live explanation
+> path from this original handoff has been removed. Use
+> [OFFLINE_EXPLANATION_INTEGRATION.md](../Docs/OFFLINE_EXPLANATION_INTEGRATION.md).
+
 # Planner handoff (Person B)
 
 Branch: `person-b-planning`. Code verified at commit `1683ff6` (code unchanged since).
@@ -10,7 +14,6 @@ I did not commit `project.pbxproj`, so these must be added to the target by whoe
 - `Services/EventClassifier.swift`
 - `Services/PlanEngine.swift`
 - `Services/OfflineExplainer.swift`
-- `Services/ClaudeService.swift`
 
 No shared model was changed. Everything uses `SleepProfile`, `SleepSummary`, `CalendarEvent`, `DailyPlan` as they are.
 
@@ -24,12 +27,6 @@ let result = try PlanEngine().makeResult(for: wakeDay,
 plan = result.plan                                  // DailyPlan, for the UI
 let offlineText = OfflineExplainer().explain(result) // works with no network
 
-// Optional live rewrite (falls back to offlineText on any failure):
-let service = ClaudeService(credentials: {
-    guard let c = try? AgentConfiguration.load() else { return nil }
-    return (apiKey: c.apiKey, model: c.model)
-})
-let explanation = await service.explain(result)      // .text and .source (.live or .offline)
 ```
 
 `PlanEngine().generatePlan(for:profile:sleepSummary:events:)` also exists and satisfies `PlanGenerating`; it returns `makeResult(...).plan`.
@@ -76,13 +73,6 @@ Offline explanation (normal night):
 
 To show a bad night in the demo, pass a `SleepSummary` with `totalAsleepMinutes` under 360 (there is no override flag).
 
-## Live Claude
-
-- It only rewrites the offline text. The rewrite is used only if it contains exactly the same clock times; otherwise, and on any error or timeout (6 s), the offline text is shown.
-- Calendar titles are never sent.
-- No key is stored in the planner code. Credentials are injected from the app's existing `Secrets.plist`.
-- **Not verified with a real key.** Only fake responses were tested.
-
 ## How it was verified
 
 From the repo root, no Xcode or signing needed:
@@ -90,14 +80,13 @@ From the repo root, no Xcode or signing needed:
 ```bash
 swiftc -o /tmp/plannercheck Models/SleepProfile.swift Models/PlanningModels.swift Services/PlanningInterfaces.swift Services/EventClassifier.swift Services/PlanEngine.swift planner-docs/PlannerCheck/main.swift && /tmp/plannercheck
 swiftc -parse-as-library -o /tmp/explaincheck Models/SleepProfile.swift Models/PlanningModels.swift Services/PlanningInterfaces.swift Services/EventClassifier.swift Services/PlanEngine.swift Services/OfflineExplainer.swift planner-docs/ExplainCheck/ExplainCheck.swift && /tmp/explaincheck
-swiftc -parse-as-library -o /tmp/claudecheck Models/SleepProfile.swift Models/PlanningModels.swift Services/PlanningInterfaces.swift Services/EventClassifier.swift Services/PlanEngine.swift Services/OfflineExplainer.swift Services/ClaudeService.swift planner-docs/ClaudeCheck/ClaudeCheck.swift && /tmp/claudecheck
 ```
 
-Results: 59/59, 18/18, 27/27 checks pass.
+Retained runner results: planner 59/59 and offline explainer 18/18. The removed live service runner no longer applies.
 
 ## Not verified / open
 
 - Full Xcode app build. Signing and the missing `Resources/Secrets` blocked it on my machine; only the planner files plus the three shared model files were compiled together.
-- A real Claude request.
+- Physical-device UI and airplane-mode walkthrough.
 - Waiting on A: confirm `planDate` = wake day, and the bad-night threshold of 360 minutes.
 - Edge case: an event starting before about 1 AM would clamp the wake time to local midnight.

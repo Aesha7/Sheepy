@@ -20,12 +20,6 @@ final class SleepController: ObservableObject {
     @Published var calendarEvents: [CalendarEvent] = []
     @Published var plan: DailyPlan?
     @Published private(set) var planResult: PlanResult?
-    @Published private(set) var explanationRevision = UUID()
-    @Published private(set) var liveExplanation: PlanExplanation?
-    @Published private(set) var liveExplanationLoading = false
-    @Published private(set) var liveExplanationError: String?
-    private let explanationService: ClaudeService
-    private var explanationTask: Task<PlanExplanation, Never>?
     @Published private(set) var plannerError: String?
     @Published private(set) var demoSleepScenario: DemoSleepScenario = .normal
     private var updatingPlanningInputs = false
@@ -50,11 +44,7 @@ final class SleepController: ObservableObject {
     private var planningRequests = PlanningRequests()
 
     init(referenceDate: Date? = nil, timeZone: TimeZone = .current,
-         planningDataMode: PlanningDataMode = .demo, explanationService: ClaudeService? = nil) {
-        self.explanationService = explanationService ?? ClaudeService(credentials: {
-            guard let configuration = try? AgentConfiguration.load() else { return nil }
-            return (apiKey: configuration.apiKey, model: configuration.model)
-        })
+         planningDataMode: PlanningDataMode = .demo) {
         fixedReferenceDate = referenceDate
         demoReferenceDate = referenceDate ?? Date()
         healthService = HealthKitService(timeZone: timeZone)
@@ -198,12 +188,6 @@ final class SleepController: ObservableObject {
     }
 
     private func invalidatePlan() {
-        explanationTask?.cancel()
-        explanationTask = nil
-        explanationRevision = UUID()
-        liveExplanation = nil
-        liveExplanationLoading = false
-        liveExplanationError = nil
         plan = nil
         planResult = nil
         plannerError = nil
@@ -234,32 +218,10 @@ final class SleepController: ObservableObject {
         publishPlanningRequests()
     }
 
-    /// Adapter for B's future explainer. Never recompute facts from changed inputs.
+    /// Exact retained result for the on-device explanation; never regenerate a plan here.
     func explanationResult(for displayedPlan: DailyPlan) -> PlanResult? {
         guard let planResult, planResult.plan == displayedPlan, plan == displayedPlan else { return nil }
         return planResult
-    }
-
-    /// Call only after the user confirms sharing the displayed offline explanation.
-    /// A captured revision prevents an old confirmation from sending newer inputs.
-    func requestLiveExplanation(for revision: UUID) async {
-        guard revision == explanationRevision, !liveExplanationLoading,
-              let result = planResult, result.plan == plan else { return }
-        liveExplanationLoading = true
-        liveExplanationError = nil
-        liveExplanation = nil
-        let service = explanationService
-        let task = Task { await service.explain(result) }
-        explanationTask = task
-        let response = await task.value
-        guard revision == explanationRevision, planResult == result, !Task.isCancelled else { return }
-        explanationTask = nil
-        liveExplanationLoading = false
-        if response.source == .live {
-            liveExplanation = response
-        } else {
-            liveExplanationError = "Claude is unavailable or its response could not be used. Your offline explanation is still available. Check configuration or connection, then retry."
-        }
     }
 
     /// Explicit simulated scenario only. Live Health data is never overridden.
