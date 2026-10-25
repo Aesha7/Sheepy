@@ -1,0 +1,17 @@
+[
+  {
+    "name": "set_lamp",
+    "description": "Fade the sheep's warm light to a brightness (0-100) over a number of minutes (0-30), starting from its current level. Use long, slow fades (20-30 minutes) for a sunrise. Brightness 0 turns it off.",
+    "input_schema": {"type":"object","properties":{"brightness":{"type":"integer","minimum":0,"maximum":100},"minutes":{"type":"number","minimum":0,"maximum":30}},"required":["brightness","minutes"]}
+  },
+  {
+    "name": "get_status",
+    "description": "Read the sheep right now: pats since power-on, room light (relative 0-1023 from a light sensor, not lux; higher is brighter), and the light's current level and target (0-100).",
+    "input_schema": {"type":"object","properties":{}}
+  },
+  {
+    "name": "read_pat_log",
+    "description": "Timestamped head pats, oldest first. The user pats the sheep at bedtime and again on waking, so this is a rough sleep log (a proxy, not clinical sleep data).",
+    "input_schema": {"type":"object","properties":{"limit":{"type":"integer","minimum":1,"maximum":200}}}
+  }
+]

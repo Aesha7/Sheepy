@@ -1,0 +1,41 @@
+.DS_Store
+.build/
+build/
+build-device/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+Resources/Secrets.plist
+.env
+.venv/
+__pycache__/
+pats.jsonl
+simulated-pats.jsonl
+*.log
+
+# Build output
+/build/
+/build-device/
+DerivedData/
+
+# Local settings
+.DS_Store
+xcuserdata/
+*.xcuserstate
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Credentials
+.env
+.env.*
+!.env.example
+Secrets.plist
+*.pem
+*.p12
+
+# Local Git backup
+/Sheepy-before-root-fix.bundle

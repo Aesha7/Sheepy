@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sleep Sheep · laptop fallback</title>
+<style>
+  :root {font:17px system-ui;color:#382e25;background:#f7f2e9;color-scheme:light}
+  body {max-width:640px;margin:auto;padding:24px}
+  h1 {margin-bottom:4px} p {line-height:1.5}
+  section {background:#fffdf8;padding:20px;border-radius:18px;margin:20px 0;border:1px solid #e7ddcd}
+  textarea,button {font:inherit;border-radius:10px;padding:12px;box-sizing:border-box}
+  textarea {width:100%;border:1px solid #b9a996;resize:vertical}
+  button {background:#74502f;color:white;border:0;margin-top:10px}
+  button:disabled {opacity:.5} #status,#chat {white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6}
+  .note {font-size:14px;color:#6f604e} #error {color:#a12c1e} #mode {font-weight:600}
+</style>
+<h1>🐑 Sleep Sheep</h1>
+<p>A softer start. Connected through your laptop.</p>
+<section><div id="mode">Checking connection…</div><p id="status" aria-live="polite"></p>
+<button id="refresh">Refresh status</button></section>
+<section><h2>Ask your sheep</h2><div id="chat" aria-live="polite"></div>
+<form id="form"><label for="message">Your request</label>
+<textarea id="message" rows="3" maxlength="4000" placeholder="Start a gentle sunrise now" required></textarea>
+<button id="send">Send</button></form><p id="error" role="alert"></p></section>
+<p class="note">Pats are a sleep proxy, not clinical sleep data. Room light is relative, not lux.
+Fades start now; this starter does not schedule alarms. Keep the laptop server running.</p>
+<script>
+const token = new URLSearchParams(location.hash.slice(1)).get('token') || '';
+const byId = id => document.getElementById(id);
+async function api(path, body) {
+  const response = await fetch(path, {method:body ? 'POST' : 'GET',
+    headers:{'X-Sheep-Token':token,'Content-Type':'application/json'},
+    body:body ? JSON.stringify(body) : undefined});
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+async function refresh() {
+  try {
+    const data = await api('/status');
+    byId('mode').textContent = (data.status.simulated ? 'SIMULATED sheep' : 'USB sheep') +
+      (data.speedup === 1 ? ' · real timing' : ` · demo timing ${data.speedup}× faster`);
+    byId('status').textContent = `Lamp ${Math.round(data.status.level)}% → ${Math.round(data.status.target)}%\n` +
+      `Room light ${data.status.light} / 1023\nPats since power-on: ${data.status.pats}\n` +
+      `Recent observed pats: ${data.pats.length}`;
+    byId('error').textContent = '';
+  } catch (error) {
+    byId('mode').textContent = 'Status unavailable'; byId('status').textContent = '';
+    byId('error').textContent = error.message;
+  }
+}
+byId('refresh').onclick = refresh;
+byId('form').onsubmit = async event => {
+  event.preventDefault();
+  const message = byId('message').value.trim();
+  if (!message) return;
+  byId('send').disabled = true; byId('send').textContent = 'Thinking…'; byId('error').textContent = '';
+  byId('chat').textContent += `You: ${message}\n\n`; byId('message').value = '';
+  try {
+    const result = await api('/chat', {message});
+    byId('chat').textContent += `Sheep: ${result.answer}\n\n`;
+    await refresh();
+  } catch (error) { byId('error').textContent = error.message; }
+  finally { byId('send').disabled = false; byId('send').textContent = 'Send'; }
+};
+refresh();
+</script>
+</html>
