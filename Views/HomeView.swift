@@ -1,13 +1,12 @@
 import SwiftUI
 
-// The dashboard. All data comes from SleepController; the bad-night action and the plan
-// explainer come in as closures from the app. Only presentation details live here: open
-// sheets and the plan shown before the last change.
+// The dashboard. All data comes from SleepController; the bad-night action comes in as a
+// closure from the app, and the explanation sheet uses the same controller. Only presentation
+// details live here: open sheets and the plan shown before the last change.
 @MainActor
 struct HomeView: View {
     @ObservedObject var controller: SleepController
     let reportBadNight: (@MainActor () async -> Void)?
-    let explain: PlanExplainer?
     /// Fixed time for previews; nil reads the clock on every redraw.
     let fixedNow: Date?
 
@@ -24,11 +23,9 @@ struct HomeView: View {
 
     init(controller: SleepController,
          reportBadNight: (@MainActor () async -> Void)? = nil,
-         explain: PlanExplainer? = nil,
          now: Date? = nil) {
         _controller = ObservedObject(wrappedValue: controller)
         self.reportBadNight = reportBadNight
-        self.explain = explain
         self.fixedNow = now
     }
 
@@ -89,7 +86,7 @@ struct HomeView: View {
         .fontDesign(.rounded)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showingExplanation) {
-            ExplanationView(plan: controller.plan, explain: explain)
+            ExplanationView(controller: controller)
         }
         .sheet(isPresented: $showingControls) { ContentView(controller: controller) }
         .onAppear { lastPlan = controller.plan }

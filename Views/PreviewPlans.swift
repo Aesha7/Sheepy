@@ -3,6 +3,14 @@ import Foundation
 // Preview-only plans so the timeline can be seen before Person B's planner is connected.
 // These are fixed sample values, not planning logic; the app never shows them.
 enum PreviewPlans {
+    static func result() -> PlanResult {
+        let reference = Date(timeIntervalSince1970: 1_792_868_400)
+        let zone = TimeZone(identifier: "America/Los_Angeles")!
+        let demo = PlanningDemoInputs.make(referenceDate: reference, timeZone: zone)
+        return try! PlanEngine().makeResult(for: demo.calendarEvents[0].start, profile: demo.profile,
+                                            sleepSummary: demo.sleepSummary, events: demo.calendarEvents)
+    }
+
     static func normal(timeZone: TimeZone = .current, now: Date = .now) -> DailyPlan {
         plan(windDown: (22, 0), caffeine: (14, 0), timeZone: timeZone, now: now)
     }

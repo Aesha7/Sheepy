@@ -7,6 +7,10 @@ import Foundation
         let controller = SleepController(referenceDate: reference, timeZone: zone)
         let normal = controller.plan!
         let normalSleep = controller.sleepSummary!
+        let explainer = OfflineExplainer()
+        let normalText = explainer.explain(controller.explanationResult(for: normal)!)
+        precondition(normalText.contains("wakes you at 6:00 AM"))
+        precondition(!normalText.contains("Last night was short"))
         precondition(controller.planResult?.plan == normal)
         precondition(controller.explanationResult(for: normal) == controller.planResult)
         var calendar = Calendar(identifier: .gregorian)
@@ -20,6 +24,10 @@ import Foundation
         precondition(badSleep.sleepEnd <= reference)
         precondition(badSleep.sleepEnd.timeIntervalSince(badSleep.sleepStart) == 330 * 60)
         precondition(controller.planResult!.isBadNightAdjusted)
+        let badText = explainer.explain(controller.explanationResult(for: bad)!)
+        precondition(badText.contains("Last night was short"))
+        precondition(badText.contains("winding down at 8:30 PM"))
+        precondition(badText != normalText)
         precondition(bad.wake == normal.wake && bad.morningLightStart == normal.morningLightStart)
         precondition(bad.morningLightEnd == normal.morningLightEnd)
         precondition(bad.windDown == normal.windDown.addingTimeInterval(-1800))
@@ -28,10 +36,19 @@ import Foundation
         controller.resetPlanningDemo()
         precondition(controller.plan == normal && controller.sleepSummary == normalSleep)
         precondition(controller.demoSleepScenario == .normal)
+        precondition(explainer.explain(controller.explanationResult(for: normal)!) == normalText)
+        // A result can change its explanation facts while the displayed dates stay equal.
+        let withSleep = controller.planResult!
+        controller.sleepSummary = nil
+        controller.regeneratePlan()
+        precondition(controller.plan == normal && controller.planResult != withSleep)
+        precondition(explainer.explain(controller.explanationResult(for: normal)!).contains("No sleep data"))
+        controller.resetPlanningDemo()
         controller.profile.preparationMinutes = 90
         precondition(controller.plan!.wake == normal.wake.addingTimeInterval(-1800))
         controller.profile.timeZoneID = "invalid-zone"
         precondition(controller.plan == nil && controller.planResult == nil && controller.plannerError != nil)
+        precondition(controller.explanationResult(for: normal) == nil)
         controller.resetPlanningDemo()
         controller.selectLivePlanning()
         precondition(controller.plan == nil && controller.planResult == nil)
@@ -53,6 +70,7 @@ import Foundation
         var tokyo = Calendar(identifier: .gregorian)
         tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         precondition(tokyo.component(.day, from: controller.plan!.planDate) == 26)
+        await LiveExplanationChecks.run()
         print("Controller normal → bad-night → reset, refresh, profile, provenance and error checks passed")
     }
 }

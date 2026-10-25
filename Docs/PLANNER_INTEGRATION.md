@@ -63,35 +63,40 @@ For the default 7 AM commitment and 60-minute preparation buffer:
 These example wall times assume a normal non-DST-transition night. The planner uses
 elapsed durations across DST. All four timeline outputs come from one DailyPlan.
 
-## Contract for B's optional explanation service
+## Offline and explicit Claude explanations
 
-B's original `planner-docs/planner-interface.md` proposal is superseded by the
-implemented `PlanResult` contract. There is no `PlanRequest` or `UserPreferences`
-type to add. Use `SleepProfile` and the retained result instead of recomputing a plan.
+B's completed service handoff through `4bb01f6` is integrated. See
+[LIVE_EXPLANATION_INTEGRATION.md](LIVE_EXPLANATION_INTEGRATION.md) for the sharing
+contract, request lifecycle, verification, and exact phone test steps.
 
-C currently accepts `PlanExplainer = @MainActor (DailyPlan) async throws ->
-PlanExplanation`, where `PlanExplanation` contains `text` and `isFallback`.
-An adapter should obtain `controller.explanationResult(for: displayedPlan)` once,
-then pass that captured immutable PlanResult to B's explanation service. That
-result carries the same plan, bedtime, sleepOpportunityMinutes, anchorEvent,
-isBadNightAdjusted, and hadSleepData used by the timeline. Never call makeResult
-again for explanation context. Reject nil as a stale/missing plan. If the future
-service needs input snapshots beyond these facts, add an explicit snapshot contract
-rather than reading mutable inputs after awaiting a response.
+The sheet observes the existing controller and renders `OfflineExplainer().explain`
+from its exact retained PlanResult immediately. Claude is optional and runs only
+after the user requests it and confirms sending the visible offline text to Anthropic.
+The service's `PlanExplanation(text:source:)` is now the single shared response type;
+C's duplicate `isFallback` wrapper and old PlanExplainer closure have been removed.
 
-The explanation service is not present on B's merged branch. The existing optional
-UI therefore displays its not-connected state. It cannot block or clear the plan.
-No new network or health-data-sharing behavior is introduced. This document is the
-repository handoff for B; no external message or PR comment was sent.
+Every plan invalidation creates a new explanation revision, cancels pending work,
+and clears the previous live text/error/loading state. This includes profile changes
+that happen to produce equal PlanResults. Confirmations capture a revision, and
+responses must still match that revision and result. No plan is regenerated to
+explain it. Missing results show no prior text.
+
+Credentials come from the existing `AgentConfiguration.load()` in ClaudeAgent.swift,
+which reads bundled `Secrets.plist` using `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`.
+The explanation service receives a closure calling that loader; it does not add a
+second loader or copy credentials. The chat agent's mutable history/tools remain
+separate. No credential file was inspected and no real Claude request was made
+while integrating this service.
 
 ## Verification and device checks
 
-B's standalone runner (`planner-docs/PlannerCheck/main.swift`) passes 59 checks.
+B's standalone planner runner passes 59 checks, and the offline explainer runner passes 18 checks.
 `Tests/ControllerPlanningChecks` compiles the real controller against isolated
 service/hardware/storage stubs and verifies initial generation, normal → bad-night
 → reset, matching retained results, stale explanation rejection, profile edits,
 invalid-profile clearing, nil/empty refresh results, timezone-local tomorrow, and
-live provenance protection. The stubs are never included in the app target.
+live provenance protection. Explanation assertions cover normal → bad-night → reset,
+missing results, and changed explanation facts with unchanged plan dates. The stubs are never included in the app target.
 Existing Health/request-tracking, Calendar mapping, and hardware checks also pass.
 The full SleepSheep Debug simulator build passes.
 

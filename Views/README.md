@@ -1,3 +1,13 @@
+> Current explanation UI: offline text is immediate; **Request Claude explanation**
+> asks for confirmation before sending the visible explanation to Anthropic. The
+> response is labeled **Claude response** only on accepted live success. See
+> `Docs/LIVE_EXPLANATION_INTEGRATION.md`; older handoff notes below are historical.
+
+> Offline explanation is now integrated from B’s `10384cb`. The sheet receives the
+> retained `PlanResult`, refreshes on complete-result changes, and explicitly labels
+> on-device text as “Offline explanation.” The original handoff notes below are
+> historical; see `Docs/PLANNER_INTEGRATION.md` for the current contract.
+
 # Sheepy UI (Person C)
 
 The redesigned dashboard, originally built on `SleepController` and the shared models from `person-a-integration` (`c3ea324`).
