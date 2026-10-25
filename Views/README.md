@@ -1,3 +1,9 @@
+> **Which branch has the latest UI?** `person-c-ui`. It contains everything on
+> `person-a-integration` plus the Sheepy look, the Why this plan? sheet and the dashboard
+> polish, and merges into `person-a-integration` as a fast-forward once A has built it.
+> The old `ui-person-c` branch was a first draft and has been deleted. `drift-agent` is the
+> earlier laptop/web version, not the iOS app.
+
 > Current explanation UI: offline text is immediate; **Request Claude explanation**
 > asks for confirmation before sending the visible explanation to Anthropic. The
 > response is labeled **Claude response** only on accepted live success. See
