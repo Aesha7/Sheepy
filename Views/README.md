@@ -4,15 +4,10 @@
 > The old `ui-person-c` branch was a first draft and has been deleted. `drift-agent` is the
 > earlier laptop/web version, not the iOS app.
 
-> Current explanation UI: offline text is immediate; **Request Claude explanation**
-> asks for confirmation before sending the visible explanation to Anthropic. The
-> response is labeled **Claude response** only on accepted live success. See
-> `Docs/LIVE_EXPLANATION_INTEGRATION.md`; older handoff notes below are historical.
-
-> Offline explanation is now integrated from B’s `10384cb`. The sheet receives the
-> retained `PlanResult`, refreshes on complete-result changes, and explicitly labels
-> on-device text as “Offline explanation.” The original handoff notes below are
-> historical; see `Docs/PLANNER_INTEGRATION.md` for the current contract.
+> **Why this plan? is offline-only** (scope change, Oct 25). The sheet shows the
+> `OfflineExplainer` text for the result SleepController retained for the displayed plan,
+> labeled "Generated on this device". There is no Claude request, network call or sharing
+> step on the plan screen. Lamp & chat keeps its own Claude chat, unchanged.
 
 # Sheepy UI (Person C)
 
@@ -55,33 +50,21 @@ integration are now complete.
   drained (droopy lids, frown, faded), and neutral when there's no sleep data. D's `sheepy-*` images still
   replace it automatically if added to the asset catalog.
 
-## "Why this plan?" experience (Oct 25, on top of A's c2f9dad)
+## "Why this plan?" (offline-only)
 
 - **Entry point:** a Why this plan? button inside the plan card, right under the four times. It appears only when
   `explanationResult(for:)` returns the retained result for the displayed plan; otherwise the card says the
-  explanation isn't available. The plan card now sits directly under Sheepy, and the demo controls
-  (I slept poorly, Reset demo) are in the top card, so the whole demo flow needs little scrolling.
+  explanation isn't available. The plan card sits directly under Sheepy, and the demo controls
+  (I slept poorly, Reset demo) are in the top card, so the demo flow needs little scrolling.
 - **Sheet** (`ExplanationView(controller:)`, same controller): the wake day, the four outputs with Today/Tomorrow
   labels in the plan's time zone, where the inputs came from (demo data; or live mode with Health sleep or "no
-  readable sleep"; calendar loaded or not), then the **Offline explanation** (labeled, immediate).
-- **Claude request:** "Request Claude explanation" opens an inline confirmation that shows the exact text
-  `ClaudeService` sends (the offline explanation), notes the fixed rewrite instruction, says whether it is demo
-  data, and offers Send / Cancel. The captured `explanationRevision` is passed to `requestLiveExplanation(for:)`;
-  a plan change closes the confirmation. Nothing is sent on open, appear, mode switch, or refresh.
-- **States:** loading keeps the offline text and disables requesting; success shows **Claude response** (only for
-  `.live`) with an Offline tab to compare; failure keeps the offline text with a short message and Try again
-  (through the same confirmation). Request ownership stays in SleepController.
-- **Previews** inject `ClaudeService` with mocked transports (success, timeout, not configured). They never touch
-  the network or real credentials.
-
-### Asks for A (controller, small)
-
-1. **Tell "not configured" apart from other failures.** Today missing credentials and network errors both become the
-   same `liveExplanationError` string, so the sheet can only say "unavailable or not set up". Smallest change: a
-   `@Published private(set) var liveExplanationConfigured: Bool?` (or an enum reason) set when the request runs.
-   The sheet would then say "Claude explanations aren't configured on this build."
-2. **Cancel a running request.** A `func cancelLiveExplanation()` that cancels `explanationTask` and clears
-   `liveExplanationLoading` (without changing the revision) would let the sheet offer Cancel while loading.
+  readable sleep"; calendar loaded or not), then the explanation, one sentence per paragraph, with a small
+  "Generated on this device" label.
+- **Always current:** the sheet stores nothing. It reads `controller.plan` and `explanationResult(for:)` on every
+  redraw, so a bad night or reset updates it even while open, and with no valid plan it shows "No plan to explain"
+  instead of old text. Works in airplane mode.
+- **Uses only** `plan`, `explanationResult(for:)`, `planningDataMode`, `calendarEvents` and `setDemoSleepScenario`
+  (previews). Nothing from the removed live-explanation state.
 
 ## Demo polish pass (Oct 25)
 

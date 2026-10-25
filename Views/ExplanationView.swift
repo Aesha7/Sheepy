@@ -1,15 +1,12 @@
 import SwiftUI
 
-/// "Why this plan?" for the plan on screen. Offline text is local and immediate; Claude is
-/// asked only after the user reviews exactly what will be sent and confirms.
-/// Request state (loading, response, error, revision) is owned by SleepController; this view
-/// only holds presentation state: which text tab is shown and an open confirmation.
+/// "Why this plan?" for the plan on screen, entirely on this device: the text comes from
+/// OfflineExplainer and the result SleepController retained for the displayed plan. Nothing is
+/// stored here, so the sheet follows the controller: a new plan shows its own explanation, and
+/// no valid plan shows no explanation at all.
 @MainActor
 struct ExplanationView: View {
     @ObservedObject var controller: SleepController
-    /// Non-nil while the confirmation is open; the revision it was opened for.
-    @State private var pendingRevision: UUID?
-    @State private var showingOffline = false
     @Environment(\.dismiss) private var dismiss
 
     /// The retained result that produced the displayed plan; never recomputed here.
@@ -17,26 +14,19 @@ struct ExplanationView: View {
         controller.plan.flatMap { controller.explanationResult(for: $0) }
     }
 
-    /// Only an accepted live response counts as a Claude response; fallbacks never do.
-    private var claudeText: String? {
-        guard let explanation = controller.liveExplanation, explanation.source == .live else { return nil }
-        return explanation.text
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     if let result {
-                        let offline = OfflineExplainer().explain(result)
                         PlanSummaryCard(result: result, inputs: inputsLine(for: result))
-                        explanationCard(offline: offline)
-                        claudeCard(offline: offline)
+                        explanationCard(OfflineExplainer().explain(result))
                     } else {
                         noPlan
                     }
                 }
                 .padding(16)
+                .animation(.easeInOut(duration: 0.25), value: result?.plan)
             }
             .background(Theme.nightSky.ignoresSafeArea())
             .foregroundStyle(Theme.text)
@@ -55,11 +45,6 @@ struct ExplanationView: View {
         }
         .preferredColorScheme(.dark)
         .presentationDetents([.large])
-        .onChange(of: controller.explanationRevision) { _, _ in
-            // New plan or inputs: an open confirmation would describe old text, so close it.
-            pendingRevision = nil
-            showingOffline = false
-        }
     }
 
     // MARK: Sections
@@ -74,112 +59,31 @@ struct ExplanationView: View {
         .card()
     }
 
-    @ViewBuilder private func explanationCard(offline: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let claudeText {
-                Picker("Explanation", selection: $showingOffline) {
-                    Text("Claude response").tag(false)
-                    Text("Offline").tag(true)
-                }
-                .pickerStyle(.segmented)
-
-                if showingOffline {
-                    offlineBlock(offline)
-                } else {
-                    Label("Claude response", systemImage: "sparkles")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.accent)
-                        .accessibilityAddTraits(.isHeader)
-                    Text(claudeText)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                    HintText("Claude reworded the offline explanation it was sent. It doesn't change your plan or confirm the recommendations.")
-                }
-            } else {
-                offlineBlock(offline)
+    private func explanationCard(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            CardHeader(title: "Why these times", systemImage: "lightbulb")
+            // One sentence per paragraph reads more easily than a single block.
+            ForEach(Array(Self.sentences(in: text).enumerated()), id: \.offset) { _, sentence in
+                Text(sentence)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        }
-        .card()
-    }
-
-    @ViewBuilder private func offlineBlock(_ text: String) -> some View {
-        Label("Offline explanation", systemImage: "iphone")
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Theme.sky)
-            .accessibilityAddTraits(.isHeader)
-        Text(text)
-            .fixedSize(horizontal: false, vertical: true)
             .textSelection(.enabled)
-        HintText("Written on this phone from the planning rules. Works without a connection. Simple rules, not medical advice.")
-    }
-
-    @ViewBuilder private func claudeCard(offline: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if pendingRevision != nil {
-                confirmation(offline: offline)
-            } else if controller.liveExplanationLoading {
-                HStack(spacing: 10) {
-                    ProgressView().tint(Theme.accent)
-                    Text("Asking Claude…")
-                }
+            Label("Generated on this device", systemImage: "iphone")
+                .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
-                .accessibilityElement(children: .combine)
-                HintText("Your offline explanation stays available while you wait.")
-            } else if controller.liveExplanationError != nil {
-                Label("Couldn't get a Claude response", systemImage: "exclamationmark.triangle")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.warning)
-                HintText("Claude may be unavailable or not set up on this build. Your offline explanation is unchanged.")
-                CardButton(title: "Try again", systemImage: "arrow.clockwise", action: askToSend)
-            } else if claudeText == nil {
-                CardButton(title: "Request Claude explanation", systemImage: "sparkles", prominent: true, action: askToSend)
-                HintText("Optional. Claude rewords the offline explanation. Nothing is sent until you confirm.")
-            } else {
-                HintText("This Claude response belongs to the plan above. If the plan changes, it's cleared and you can ask again.")
-            }
+            HintText("Simple planning rules, not medical advice.")
         }
         .card()
+        .accessibilityElement(children: .contain)
     }
 
-    private func confirmation(offline: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("Send to Anthropic?", systemImage: "paperplane")
-                .font(.headline)
-                .accessibilityAddTraits(.isHeader)
-            Text("Claude will reword your explanation. This exact text is sent to Anthropic, with a fixed instruction to keep every time unchanged:")
-                .font(.subheadline)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(offline)
-                .font(.footnote)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.background.opacity(0.7), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .accessibilityLabel("Text to be sent: \(offline)")
-            HintText(controller.planningDataMode == .demo
-                     ? "This is demo data, not your Health or Calendar data."
-                     : "This comes from your live data. It can reveal your schedule times, how much sleep the plan allows, and whether recent sleep was short or unavailable.")
-            HStack(spacing: 10) {
-                CardButton(title: "Cancel", systemImage: "xmark") { pendingRevision = nil }
-                CardButton(title: "Send", systemImage: "paperplane.fill", prominent: true, action: send)
-                    .disabled(controller.liveExplanationLoading)
-            }
+    /// Splits the explainer's text at sentence ends. Clock times like "7:00 AM" contain no
+    /// period followed by a space, so they stay intact.
+    private static func sentences(in text: String) -> [String] {
+        let parts = text.components(separatedBy: ". ")
+        return parts.enumerated().map { index, part in
+            index < parts.count - 1 ? part + "." : part
         }
-    }
-
-    // MARK: Actions
-
-    private func askToSend() {
-        guard !controller.liveExplanationLoading else { return }
-        pendingRevision = controller.explanationRevision
-    }
-
-    private func send() {
-        // The controller rejects a revision that no longer matches the displayed plan.
-        guard let revision = pendingRevision else { return }
-        pendingRevision = nil
-        showingOffline = false
-        Task { await controller.requestLiveExplanation(for: revision) }
     }
 
     /// Where the plan's inputs came from, without implying Health data that wasn't there.
@@ -248,49 +152,18 @@ private struct PlanSummaryCard: View {
     }
 }
 
-// MARK: Previews
-// Mocked services only: no network, no real credentials. Tap the buttons in the canvas.
+// MARK: Previews (the real planner and offline explainer; no network)
 
-private enum PreviewService {
-    /// Echoes the sent text back with a friendlier opening, so the time check passes.
-    static let success = ClaudeService(credentials: { (apiKey: "preview-only", model: "preview-model") },
-                                       transport: { request in
-        let body = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: Any]
-        let sent = ((body?["messages"] as? [[String: Any]])?.first?["content"] as? String) ?? ""
-        try await Task.sleep(for: .seconds(1.5))
-        let reply: [String: Any] = ["content": [["type": "text", "text": "Here's the thinking behind tomorrow.\n\n\(sent)"]],
-                                    "stop_reason": "end_turn"]
-        let data = try JSONSerialization.data(withJSONObject: reply)
-        return (data, HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
-    })
-
-    static let timeout = ClaudeService(credentials: { (apiKey: "preview-only", model: "preview-model") },
-                                       transport: { _ in
-        try await Task.sleep(for: .seconds(1))
-        throw URLError(.timedOut)
-    })
-
-    static let notConfigured = ClaudeService(credentials: { nil })
-}
-
-#Preview("Demo · mock success") {
-    ExplanationView(controller: SleepController(explanationService: PreviewService.success))
-}
-
-#Preview("Demo · mock timeout") {
-    ExplanationView(controller: SleepController(explanationService: PreviewService.timeout))
-}
-
-#Preview("Not configured") {
-    ExplanationView(controller: SleepController(explanationService: PreviewService.notConfigured))
+#Preview("Demo") {
+    ExplanationView(controller: SleepController())
 }
 
 #Preview("Bad night · large text") {
-    let controller = SleepController(explanationService: PreviewService.success)
+    let controller = SleepController()
     controller.setDemoSleepScenario(.badNight)
     return ExplanationView(controller: controller).dynamicTypeSize(.accessibility1)
 }
 
 #Preview("No current plan") {
-    ExplanationView(controller: SleepController(planningDataMode: .live, explanationService: PreviewService.notConfigured))
+    ExplanationView(controller: SleepController(planningDataMode: .live))
 }
