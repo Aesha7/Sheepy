@@ -8,73 +8,73 @@
 
 /* Begin PBXBuildFile section */
 		0AB48D7E28C42B9825153FEC /* Docs/AGENT_PROMPT.md in Resources */ = {isa = PBXBuildFile; fileRef = 8360ADE81032E001BDA3AEB3 /* Docs/AGENT_PROMPT.md */; };
+		0D2887C28971F8F20C99FF2E /* Views/DashboardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6981939F55D1C74939F9BA02 /* Views/DashboardStyle.swift */; };
+		13C0DBE37B2DE7400EB204E0 /* Services/ClaudeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4BCBD80110A4ABDF263D9B /* Services/ClaudeService.swift */; };
 		1B2F32AA3A90107E0B880E39 /* Models/SleepProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDBCBD753789BDB9819C1E01 /* Models/SleepProfile.swift */; };
+		1E4BE9D12086D602AE31636B /* Services/PlanningInterfaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019913582139845C61AD80D6 /* Services/PlanningInterfaces.swift */; };
+		1FE9869CBD3C95BC571827F8 /* Services/PlanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */; };
+		255E0022EC4C27015D16D415 /* Views/QuestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A2911D6BDED6171FDFCD1 /* Views/QuestsView.swift */; };
+		3352DFA8ABEAD4C62B19F3D9 /* Views/SheepyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */; };
 		34D60D23F9507C7C1CF36AFA /* Resources/tools.json in Resources */ = {isa = PBXBuildFile; fileRef = AECD04EA713C9591E5ABB597 /* Resources/tools.json */; };
 		36BF1F09B4712E1B642E3BCF /* App/SleepController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933D1FD9BB817BCD48302C78 /* App/SleepController.swift */; };
+		37509FCBAB35C7263F4F00E8 /* Views/HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5365A0847A05773A2086D96 /* Views/HomeView.swift */; };
 		3D62E9867CEF851EE3457407 /* Services/SheepHardware.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A843D1DF1E0DF4B408BD19 /* Services/SheepHardware.swift */; };
+		40C3B48F2B315D10E0823220 /* Views/PreviewPlans.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465B43D382A2F5A483A23956 /* Views/PreviewPlans.swift */; };
 		4DCCBD7EDF68E342CD6F6F21 /* Services/BluetoothSheep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 324CB8A1CDA0EBB988BB8594 /* Services/BluetoothSheep.swift */; };
+		5439F3BF799E28A71A8936C8 /* Views/ExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931ADDB13FCEBE338E432F13 /* Views/ExplanationView.swift */; };
+		5A634717C10BC3C92D532C4F /* Models/PlanningDemoInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE00984D7CF676C4B52C7F /* Models/PlanningDemoInputs.swift */; };
+		5CBCEB883D9D06B33DF015A7 /* Views/TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */; };
+		63793522216A8381AE5D79A3 /* Views/CalendarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E72590FEBF3C98D3CE7B12 /* Views/CalendarCard.swift */; };
+		710D5B6ADA68CA4BC8D49D18 /* Services/EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 772799E63355BED11184D3CD /* Services/EventClassifier.swift */; };
+		9172BD025D818309BD1C68E7 /* Services/SleepSessionProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6DA9CB40FDC603737D99DB6 /* Services/SleepSessionProcessor.swift */; };
 		ADD8FDC3749E6EB8568A3C30 /* Services/CalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BEF42ADE48BDAD926958EDC /* Services/CalendarService.swift */; };
+		AF9417F8627C2ABB8B4B4F0F /* Services/HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666080E29BC75278D01428A0 /* Services/HealthKitService.swift */; };
+		B5B4F1E190A69DF1B9D0D37E /* Views/SleepSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */; };
+		B963DC23F19DB0D454B15FA8 /* Models/PlanningRequests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3362A474FB3B1B56CEE23DED /* Models/PlanningRequests.swift */; };
 		B9DC9D537ED07401A43784C9 /* Services/ClaudeAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59AAF598141FE4DB3FA29F2 /* Services/ClaudeAgent.swift */; };
 		D584BB852080DCF992CCA2FB /* Services/WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70698367CCCC5EDC9F540070 /* Services/WeatherService.swift */; };
 		D5EE107F456BA7D6EB2F8DEF /* Services/PatLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D14438BC362B5EDDB4086D1E /* Services/PatLog.swift */; };
 		DBB46B3297978344C7C356E7 /* Models/SheepProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBD1F562B6B2A9F28CBB9538 /* Models/SheepProtocol.swift */; };
 		E1E5A742D49EC066E5C040F6 /* Resources/Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = 15716B489C34E5BEF46A81C0 /* Resources/Secrets.plist */; };
-		FF8134F52AB18EFABB5AAB34 /* App/SleepSheepApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CF2525326A80550CA38EBE /* App/SleepSheepApp.swift */; };
-		F60C78B775C986C152BE0DA7 /* Models/PlanningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565DD7773D83BABABA0D23A4 /* Models/PlanningModels.swift */; };
-		5A634717C10BC3C92D532C4F /* Models/PlanningDemoInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DE00984D7CF676C4B52C7F /* Models/PlanningDemoInputs.swift */; };
-		1E4BE9D12086D602AE31636B /* Services/PlanningInterfaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 019913582139845C61AD80D6 /* Services/PlanningInterfaces.swift */; };
-		AF9417F8627C2ABB8B4B4F0F /* Services/HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666080E29BC75278D01428A0 /* Services/HealthKitService.swift */; };
-		9172BD025D818309BD1C68E7 /* Services/SleepSessionProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6DA9CB40FDC603737D99DB6 /* Services/SleepSessionProcessor.swift */; };
-		B963DC23F19DB0D454B15FA8 /* Models/PlanningRequests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3362A474FB3B1B56CEE23DED /* Models/PlanningRequests.swift */; };
-		63793522216A8381AE5D79A3 /* Views/CalendarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E72590FEBF3C98D3CE7B12 /* Views/CalendarCard.swift */; };
-		0D2887C28971F8F20C99FF2E /* Views/DashboardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6981939F55D1C74939F9BA02 /* Views/DashboardStyle.swift */; };
-		5439F3BF799E28A71A8936C8 /* Views/ExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931ADDB13FCEBE338E432F13 /* Views/ExplanationView.swift */; };
-		37509FCBAB35C7263F4F00E8 /* Views/HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5365A0847A05773A2086D96 /* Views/HomeView.swift */; };
-		40C3B48F2B315D10E0823220 /* Views/PreviewPlans.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465B43D382A2F5A483A23956 /* Views/PreviewPlans.swift */; };
-		255E0022EC4C27015D16D415 /* Views/QuestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A2911D6BDED6171FDFCD1 /* Views/QuestsView.swift */; };
-		3352DFA8ABEAD4C62B19F3D9 /* Views/SheepyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */; };
-		B5B4F1E190A69DF1B9D0D37E /* Views/SleepSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */; };
-		5CBCEB883D9D06B33DF015A7 /* Views/TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */; };
-		710D5B6ADA68CA4BC8D49D18 /* Services/EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 772799E63355BED11184D3CD /* Services/EventClassifier.swift */; };
-		1FE9869CBD3C95BC571827F8 /* Services/PlanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */; };
 		F5E748694638DAAE5631A4A1 /* Services/OfflineExplainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9366C6F00FAE6DB6C381C9B9 /* Services/OfflineExplainer.swift */; };
-		13C0DBE37B2DE7400EB204E0 /* Services/ClaudeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4BCBD80110A4ABDF263D9B /* Services/ClaudeService.swift */; };
+		F60C78B775C986C152BE0DA7 /* Models/PlanningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 565DD7773D83BABABA0D23A4 /* Models/PlanningModels.swift */; };
+		FF8134F52AB18EFABB5AAB34 /* App/SleepSheepApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CF2525326A80550CA38EBE /* App/SleepSheepApp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		019913582139845C61AD80D6 /* Services/PlanningInterfaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PlanningInterfaces.swift; sourceTree = SOURCE_ROOT; };
+		0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PlanEngine.swift; sourceTree = SOURCE_ROOT; };
 		15716B489C34E5BEF46A81C0 /* Resources/Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text; path = Resources/Secrets.plist; sourceTree = SOURCE_ROOT; };
 		324CB8A1CDA0EBB988BB8594 /* Services/BluetoothSheep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/BluetoothSheep.swift; sourceTree = SOURCE_ROOT; };
+		3362A474FB3B1B56CEE23DED /* Models/PlanningRequests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningRequests.swift; sourceTree = SOURCE_ROOT; };
 		42CF2525326A80550CA38EBE /* App/SleepSheepApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SleepSheepApp.swift; sourceTree = SOURCE_ROOT; };
+		465B43D382A2F5A483A23956 /* Views/PreviewPlans.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/PreviewPlans.swift; sourceTree = SOURCE_ROOT; };
+		565DD7773D83BABABA0D23A4 /* Models/PlanningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningModels.swift; sourceTree = SOURCE_ROOT; };
 		56A843D1DF1E0DF4B408BD19 /* Services/SheepHardware.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/SheepHardware.swift; sourceTree = SOURCE_ROOT; };
+		56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SheepyView.swift; sourceTree = SOURCE_ROOT; };
+		666080E29BC75278D01428A0 /* Services/HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/HealthKitService.swift; sourceTree = SOURCE_ROOT; };
+		67DE00984D7CF676C4B52C7F /* Models/PlanningDemoInputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningDemoInputs.swift; sourceTree = SOURCE_ROOT; };
+		6981939F55D1C74939F9BA02 /* Views/DashboardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/DashboardStyle.swift; sourceTree = SOURCE_ROOT; };
 		70698367CCCC5EDC9F540070 /* Services/WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/WeatherService.swift; sourceTree = SOURCE_ROOT; };
+		772799E63355BED11184D3CD /* Services/EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/EventClassifier.swift; sourceTree = SOURCE_ROOT; };
+		7A4BCBD80110A4ABDF263D9B /* Services/ClaudeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ClaudeService.swift; sourceTree = SOURCE_ROOT; };
 		7BEF42ADE48BDAD926958EDC /* Services/CalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/CalendarService.swift; sourceTree = SOURCE_ROOT; };
 		8360ADE81032E001BDA3AEB3 /* Docs/AGENT_PROMPT.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = Docs/AGENT_PROMPT.md; sourceTree = SOURCE_ROOT; };
+		931ADDB13FCEBE338E432F13 /* Views/ExplanationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ExplanationView.swift; sourceTree = SOURCE_ROOT; };
 		933D1FD9BB817BCD48302C78 /* App/SleepController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App/SleepController.swift; sourceTree = SOURCE_ROOT; };
+		9366C6F00FAE6DB6C381C9B9 /* Services/OfflineExplainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/OfflineExplainer.swift; sourceTree = SOURCE_ROOT; };
 		A8792157CB4F27FB949C035F /* SleepSheep.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = SleepSheep.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AECD04EA713C9591E5ABB597 /* Resources/tools.json */ = {isa = PBXFileReference; lastKnownFileType = text; path = Resources/tools.json; sourceTree = SOURCE_ROOT; };
+		B5365A0847A05773A2086D96 /* Views/HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/HomeView.swift; sourceTree = SOURCE_ROOT; };
+		C37A2911D6BDED6171FDFCD1 /* Views/QuestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/QuestsView.swift; sourceTree = SOURCE_ROOT; };
+		C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/TimelineView.swift; sourceTree = SOURCE_ROOT; };
 		D14438BC362B5EDDB4086D1E /* Services/PatLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PatLog.swift; sourceTree = SOURCE_ROOT; };
+		D6DA9CB40FDC603737D99DB6 /* Services/SleepSessionProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/SleepSessionProcessor.swift; sourceTree = SOURCE_ROOT; };
+		D8E72590FEBF3C98D3CE7B12 /* Views/CalendarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/CalendarCard.swift; sourceTree = SOURCE_ROOT; };
 		DBD1F562B6B2A9F28CBB9538 /* Models/SheepProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SheepProtocol.swift; sourceTree = SOURCE_ROOT; };
 		E59AAF598141FE4DB3FA29F2 /* Services/ClaudeAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/ClaudeAgent.swift; sourceTree = SOURCE_ROOT; };
+		E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/SleepSummaryView.swift; sourceTree = SOURCE_ROOT; };
 		FDBCBD753789BDB9819C1E01 /* Models/SleepProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SleepProfile.swift; sourceTree = SOURCE_ROOT; };
-		565DD7773D83BABABA0D23A4 /* Models/PlanningModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningModels.swift; sourceTree = SOURCE_ROOT; };
-		67DE00984D7CF676C4B52C7F /* Models/PlanningDemoInputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningDemoInputs.swift; sourceTree = SOURCE_ROOT; };
-		019913582139845C61AD80D6 /* Services/PlanningInterfaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PlanningInterfaces.swift; sourceTree = SOURCE_ROOT; };
-		666080E29BC75278D01428A0 /* Services/HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/HealthKitService.swift; sourceTree = SOURCE_ROOT; };
-		D6DA9CB40FDC603737D99DB6 /* Services/SleepSessionProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/SleepSessionProcessor.swift; sourceTree = SOURCE_ROOT; };
-		3362A474FB3B1B56CEE23DED /* Models/PlanningRequests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningRequests.swift; sourceTree = SOURCE_ROOT; };
-		D8E72590FEBF3C98D3CE7B12 /* Views/CalendarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CalendarCard.swift"; sourceTree = SOURCE_ROOT; };
-		6981939F55D1C74939F9BA02 /* Views/DashboardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/DashboardStyle.swift"; sourceTree = SOURCE_ROOT; };
-		931ADDB13FCEBE338E432F13 /* Views/ExplanationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/ExplanationView.swift"; sourceTree = SOURCE_ROOT; };
-		B5365A0847A05773A2086D96 /* Views/HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/HomeView.swift"; sourceTree = SOURCE_ROOT; };
-		465B43D382A2F5A483A23956 /* Views/PreviewPlans.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/PreviewPlans.swift"; sourceTree = SOURCE_ROOT; };
-		C37A2911D6BDED6171FDFCD1 /* Views/QuestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/QuestsView.swift"; sourceTree = SOURCE_ROOT; };
-		56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SheepyView.swift"; sourceTree = SOURCE_ROOT; };
-		E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SleepSummaryView.swift"; sourceTree = SOURCE_ROOT; };
-		C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TimelineView.swift"; sourceTree = SOURCE_ROOT; };
-		772799E63355BED11184D3CD /* Services/EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/EventClassifier.swift"; sourceTree = SOURCE_ROOT; };
-		0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/PlanEngine.swift"; sourceTree = SOURCE_ROOT; };
-		9366C6F00FAE6DB6C381C9B9 /* Services/OfflineExplainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/OfflineExplainer.swift"; sourceTree = SOURCE_ROOT; };
-		7A4BCBD80110A4ABDF263D9B /* Services/ClaudeService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/ClaudeService.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -280,8 +280,8 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
-				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = Resources/SleepSheep.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = L2X8XF2QMA;
 				INFOPLIST_FILE = Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -345,8 +345,8 @@
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
-				CODE_SIGN_STYLE = Automatic;
 				CODE_SIGN_ENTITLEMENTS = Resources/SleepSheep.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = L2X8XF2QMA;
 				INFOPLIST_FILE = Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
