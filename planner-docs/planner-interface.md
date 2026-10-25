@@ -1,3 +1,6 @@
+> Integrated contract: see [PLANNER_INTEGRATION.md](../Docs/PLANNER_INTEGRATION.md).
+> The proposal below is historical; use the implemented PlanResult and SleepProfile types.
+
 # Planner Interface Proposal (Person B)
 
 **Status:** Draft, awaiting feedback from A and C

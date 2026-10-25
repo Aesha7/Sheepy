@@ -1,7 +1,8 @@
 import Foundation
 
 /// Minimal preview fixtures for Person C; Person D can extend this catalog.
-/// This supplies inputs only. It does not implement Person B's planning logic.
+/// Supplies inputs only; PlanEngine owns the planning rules.
+enum DemoSleepScenario: String { case normal, badNight }
 struct PlanningDemoInputs {
     let profile: SleepProfile
     let sleepSummary: SleepSummary
@@ -9,7 +10,7 @@ struct PlanningDemoInputs {
     let sheepyState: SheepyState
     let quests: [Quest]
 
-    static func make(referenceDate: Date, timeZone: TimeZone) -> PlanningDemoInputs {
+    static func make(referenceDate: Date, timeZone: TimeZone, scenario: DemoSleepScenario = .normal) -> PlanningDemoInputs {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         let today = calendar.startOfDay(for: referenceDate)
@@ -19,18 +20,19 @@ struct PlanningDemoInputs {
         let sleepEnd = todayWake <= referenceDate ? todayWake
             : calendar.date(byAdding: .day, value: -1, to: todayWake)!
         let commitment = calendar.date(bySettingHour: 7, minute: 0, second: 0, of: tomorrow)!
+        let asleepMinutes = scenario == .badNight ? 330 : 480
         return PlanningDemoInputs(
             profile: SleepProfile(preferredWakeHour: 7, preferredWakeMinute: 0,
                                   timeZoneID: timeZone.identifier, preparationMinutes: 60,
                                   targetSleepMinutes: 480),
-            sleepSummary: SleepSummary(sleepStart: sleepEnd.addingTimeInterval(-8 * 60 * 60),
-                                       sleepEnd: sleepEnd, totalAsleepMinutes: 480,
+            sleepSummary: SleepSummary(sleepStart: sleepEnd.addingTimeInterval(-Double(asleepMinutes) * 60),
+                                       sleepEnd: sleepEnd, totalAsleepMinutes: asleepMinutes,
                                        averageHeartRateBPM: 58, provenance: .demo),
             calendarEvents: [CalendarEvent(id: "demo-tomorrow-7am", title: "Demo: 7 AM commitment",
                                            start: commitment, end: commitment.addingTimeInterval(3600),
                                            isAllDay: false, timeZoneID: timeZone.identifier,
                                            destinationTimeZoneID: nil)],
-            sheepyState: .lively,
+            sheepyState: scenario == .badNight ? .drained : .lively,
             quests: [Quest(id: "demo-morning-light", title: "Demo: Get morning light", isCompleted: false)])
     }
 }

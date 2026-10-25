@@ -4,7 +4,7 @@ import SwiftUI
 struct SleepSheepApp: App {
     @StateObject private var controller = SleepController()
     var body: some Scene {
-        WindowGroup { HomeView(controller: controller) }
+        WindowGroup { HomeView(controller: controller, reportBadNight: { controller.setDemoSleepScenario(.badNight) }) }
     }
 }
 

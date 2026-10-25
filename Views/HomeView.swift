@@ -37,11 +37,7 @@ struct HomeView: View {
     private var profileZone: TimeZone { DayTime.zone(controller.profile.timeZoneID) }
     private var busy: Bool { reporting || controller.planningLoading }
     private var replanning: Bool { reporting }
-    private var planError: String? {
-        guard let error = controller.planningError, controller.calendarError == nil,
-              controller.healthError == nil else { return nil }
-        return error
-    }
+    private var planError: String? { controller.plannerError }
 
     var body: some View {
         ScrollView {
@@ -80,7 +76,7 @@ struct HomeView: View {
         .onAppear { lastPlan = controller.plan }
         .onChange(of: controller.plan) { _, new in
             // Remember what was on screen before a new plan, so the timeline can mark changes.
-            guard let new else { return }
+            guard let new else { lastPlan = nil; previousPlan = nil; return }
             if let lastPlan, lastPlan != new { previousPlan = lastPlan }
             lastPlan = new
         }
@@ -170,10 +166,12 @@ struct HomeView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.roundedRectangle(radius: 16))
             .tint(Theme.accent)
-            .disabled(busy || reportBadNight == nil)
+            .disabled(busy || reportBadNight == nil || mode != .demo)
 
             if reportBadNight == nil {
                 caption("Replanning connects when the planner is ready.")
+            } else if mode != .demo {
+                caption("Bad-night simulation is available only with demo data. Live sleep comes from Health.")
             } else if mode == .demo {
                 caption("Demo: simulates a short night. Nothing is written to Apple Health.")
             }
@@ -211,7 +209,7 @@ struct HomeView: View {
     // MARK: Actions
 
     private func runBadNight() async {
-        guard let reportBadNight, !busy else { return }
+        guard let reportBadNight, !busy, mode == .demo else { return }
         reporting = true
         await reportBadNight()
         reporting = false
@@ -270,7 +268,7 @@ struct HomeView: View {
         previousPlan = nil
         calendarConnected = false
         calendarRun += 1
-        controller.loadPlanningDemo(referenceDate: Date(), timeZone: profileZone)
+        controller.resetPlanningDemo()
     }
 }
 

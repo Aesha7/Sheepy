@@ -13,10 +13,19 @@ final class SleepController: ObservableObject {
     @Published var chat: [ChatEntry] = []
     @Published var stageDemo = false
     @Published private(set) var simulated: Bool
-    @Published var profile: SleepProfile
+    @Published var profile: SleepProfile {
+        didSet { if profile != oldValue && !updatingPlanningInputs { regeneratePlan() } }
+    }
     @Published var sleepSummary: SleepSummary?
     @Published var calendarEvents: [CalendarEvent] = []
     @Published var plan: DailyPlan?
+    @Published private(set) var planResult: PlanResult?
+    @Published private(set) var plannerError: String?
+    @Published private(set) var demoSleepScenario: DemoSleepScenario = .normal
+    private var updatingPlanningInputs = false
+    private var demoReferenceDate: Date
+    private let fixedReferenceDate: Date?
+    private let planEngine = PlanEngine()
     @Published var sheepyState: SheepyState = .lively
     @Published var quests: [Quest] = []
     @Published private(set) var planningDataMode: PlanningDataMode
@@ -34,8 +43,10 @@ final class SleepController: ObservableObject {
     private let healthService: HealthKitService
     private var planningRequests = PlanningRequests()
 
-    init(referenceDate: Date = Date(), timeZone: TimeZone = .current,
+    init(referenceDate: Date? = nil, timeZone: TimeZone = .current,
          planningDataMode: PlanningDataMode = .demo) {
+        fixedReferenceDate = referenceDate
+        demoReferenceDate = referenceDate ?? Date()
         healthService = HealthKitService(timeZone: timeZone)
         profile = SleepProfile(preferredWakeHour: 7, preferredWakeMinute: 0,
                                timeZoneID: timeZone.identifier, preparationMinutes: 60,
@@ -49,17 +60,21 @@ final class SleepController: ObservableObject {
         hardware = BluetoothSheep()
         #endif
         wireHardware()
-        if planningDataMode == .demo { loadPlanningDemo(referenceDate: referenceDate, timeZone: timeZone) }
+        if planningDataMode == .demo { loadPlanningDemo(referenceDate: demoReferenceDate, timeZone: timeZone) }
     }
     /// Replaces planning inputs only. Does not connect hardware or call Claude.
     func loadPlanningDemo(referenceDate: Date, timeZone: TimeZone) {
+        updatingPlanningInputs = true
+        defer { updatingPlanningInputs = false; regeneratePlan() }
+        demoReferenceDate = referenceDate
+        demoSleepScenario = .normal
         planningRequests.reset()
         let demo = PlanningDemoInputs.make(referenceDate: referenceDate, timeZone: timeZone)
         planningDataMode = .demo
         profile = demo.profile
         sleepSummary = demo.sleepSummary
         calendarEvents = demo.calendarEvents
-        plan = nil
+        invalidatePlan()
         sheepyState = demo.sheepyState
         quests = demo.quests
         planningLoading = false
@@ -72,7 +87,7 @@ final class SleepController: ObservableObject {
         planningDataMode = .live
         sleepSummary = nil
         calendarEvents = []
-        plan = nil
+        invalidatePlan()
         sheepyState = .lively
         quests = []
         planningLoading = false
@@ -95,14 +110,14 @@ final class SleepController: ObservableObject {
         } catch {
             guard planningRequests.isCurrent(requestID, for: .calendar), planningDataMode == .live else { return false }
             calendarEvents = []
-            plan = nil
+            invalidatePlan()
             planningRequests.fail("Calendar: \(error.localizedDescription)", token: requestID, provider: .calendar)
             return false
         }
     }
 
     /// Fetches authorized data only; reports errors through planningError.
-    func refreshLiveCalendarEvents(in interval: DateInterval) async {
+    func refreshLiveCalendarEvents(in interval: DateInterval, referenceDate: Date? = nil) async {
         guard planningDataMode == .live else { return }
         let requestID = planningRequests.begin(.calendar)
         publishPlanningRequests()
@@ -114,17 +129,18 @@ final class SleepController: ObservableObject {
             let events = try await calendarService.events(in: interval)
             guard planningRequests.isCurrent(requestID, for: .calendar), planningDataMode == .live else { return }
             calendarEvents = events
-            plan = nil
+            regeneratePlan(referenceDate: referenceDate)
         } catch {
             guard planningRequests.isCurrent(requestID, for: .calendar), planningDataMode == .live else { return }
             calendarEvents = []
-            plan = nil
+            invalidatePlan()
             planningRequests.fail("Calendar: \(error.localizedDescription)", token: requestID, provider: .calendar)
         }
     }
     private func publishPlanningRequests() {
         planningLoading = planningRequests.loading
-        planningError = planningRequests.error
+        let messages = [planningRequests.error, plannerError].compactMap { $0 }
+        planningError = messages.isEmpty ? nil : messages.joined(separator: "\n")
     }
 
     /// Explicit user action only. true means the flow completed, not read permission.
@@ -144,7 +160,7 @@ final class SleepController: ObservableObject {
             guard planningRequests.isCurrent(token, for: .health), planningDataMode == .live else { return false }
             planningRequests.fail("Health: \(error.localizedDescription)", token: token, provider: .health)
             sleepSummary = nil
-            plan = nil
+            invalidatePlan()
             return false
         }
     }
@@ -162,13 +178,67 @@ final class SleepController: ObservableObject {
             let summary = try await healthService.sleepSummary(before: referenceDate)
             guard planningRequests.isCurrent(token, for: .health), planningDataMode == .live else { return }
             sleepSummary = summary
-            plan = nil
+            regeneratePlan(referenceDate: referenceDate)
         } catch {
             guard planningRequests.isCurrent(token, for: .health), planningDataMode == .live else { return }
             sleepSummary = nil
-            plan = nil
+            invalidatePlan()
             planningRequests.fail("Health: \(error.localizedDescription)", token: token, provider: .health)
         }
+    }
+
+    private func invalidatePlan() {
+        plan = nil
+        planResult = nil
+        plannerError = nil
+    }
+
+    /// Pure local generation. One makeResult call supplies both timeline and explanation facts.
+    func regeneratePlan(referenceDate: Date? = nil) {
+        invalidatePlan()
+        let reference = referenceDate ?? (planningDataMode == .demo ? demoReferenceDate : fixedReferenceDate ?? Date())
+        do {
+            guard let zone = TimeZone(identifier: profile.timeZoneID) else {
+                throw PlannerError.invalidTimeZone(profile.timeZoneID)
+            }
+            guard reference.timeIntervalSinceReferenceDate.isFinite else { throw PlannerError.dateComputationFailed }
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = zone
+            guard let tomorrow = calendar.date(byAdding: .day, value: 1,
+                                                to: calendar.startOfDay(for: reference)) else {
+                throw PlannerError.dateComputationFailed
+            }
+            let result = try planEngine.makeResult(for: tomorrow, profile: profile,
+                                                   sleepSummary: sleepSummary, events: calendarEvents)
+            planResult = result
+            plan = result.plan
+        } catch {
+            plannerError = error.localizedDescription
+        }
+        publishPlanningRequests()
+    }
+
+    /// Adapter for B's future explainer. Never recompute facts from changed inputs.
+    func explanationResult(for displayedPlan: DailyPlan) -> PlanResult? {
+        guard let planResult, planResult.plan == displayedPlan, plan == displayedPlan else { return nil }
+        return planResult
+    }
+
+    /// Explicit simulated scenario only. Live Health data is never overridden.
+    func setDemoSleepScenario(_ scenario: DemoSleepScenario) {
+        guard planningDataMode == .demo, sleepSummary?.provenance == .demo else { return }
+        guard let zone = TimeZone(identifier: profile.timeZoneID) else { regeneratePlan(); return }
+        let demo = PlanningDemoInputs.make(referenceDate: demoReferenceDate, timeZone: zone, scenario: scenario)
+        demoSleepScenario = scenario
+        sleepSummary = demo.sleepSummary
+        sheepyState = demo.sheepyState
+        regeneratePlan()
+    }
+
+    /// Keeps an injected demo date stable across the normal → bad-night → reset flow.
+    func resetPlanningDemo() {
+        loadPlanningDemo(referenceDate: planningDataMode == .demo ? demoReferenceDate : fixedReferenceDate ?? Date(),
+                         timeZone: TimeZone(identifier: profile.timeZoneID) ?? .current)
     }
 
     private func wireHardware() {

@@ -6,8 +6,9 @@ Only `Views/` is new; no shared models, services, app entry point or project fil
 **Integration status:** merged into person-a-integration and compiled with the actual SleepSheep simulator scheme. iOS 17.
 
 The app now presents `HomeView` with its existing controller. **Lamp & chat** opens
-`ContentView` using that same instance. No runtime preview plan is installed; the
-empty-plan state remains until B is integrated.
+`ContentView` using that same instance. Runtime plans now come from B’s PlanEngine through SleepController. Preview plans remain preview-only.
+The demo bad-night and reset controls regenerate all four timeline outputs locally.
+See `Docs/PLANNER_INTEGRATION.md` for the retained PlanResult/explanation contract.
 
 **Health integration added by A:** Recent sleep now has explicit **Enable Health**
 and **Refresh sleep** actions. Enable switches to live only when necessary, awaits

@@ -35,6 +35,8 @@
 		3352DFA8ABEAD4C62B19F3D9 /* Views/SheepyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */; };
 		B5B4F1E190A69DF1B9D0D37E /* Views/SleepSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */; };
 		5CBCEB883D9D06B33DF015A7 /* Views/TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */; };
+		710D5B6ADA68CA4BC8D49D18 /* Services/EventClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 772799E63355BED11184D3CD /* Services/EventClassifier.swift */; };
+		1FE9869CBD3C95BC571827F8 /* Services/PlanEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +69,8 @@
 		56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SheepyView.swift"; sourceTree = SOURCE_ROOT; };
 		E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SleepSummaryView.swift"; sourceTree = SOURCE_ROOT; };
 		C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TimelineView.swift"; sourceTree = SOURCE_ROOT; };
+		772799E63355BED11184D3CD /* Services/EventClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/EventClassifier.swift"; sourceTree = SOURCE_ROOT; };
+		0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Services/PlanEngine.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +95,8 @@
 		0D6E4079E36703EBD37C0072 = {
 			isa = PBXGroup;
 			children = (
+				0A591F2AF24D71EEA1D080E9 /* Services/PlanEngine.swift */,
+				772799E63355BED11184D3CD /* Services/EventClassifier.swift */,
 				C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */,
 				E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */,
 				56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */,
@@ -188,6 +194,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1FE9869CBD3C95BC571827F8 /* Services/PlanEngine.swift in Sources */,
+				710D5B6ADA68CA4BC8D49D18 /* Services/EventClassifier.swift in Sources */,
 				5CBCEB883D9D06B33DF015A7 /* Views/TimelineView.swift in Sources */,
 				B5B4F1E190A69DF1B9D0D37E /* Views/SleepSummaryView.swift in Sources */,
 				3352DFA8ABEAD4C62B19F3D9 /* Views/SheepyView.swift in Sources */,
