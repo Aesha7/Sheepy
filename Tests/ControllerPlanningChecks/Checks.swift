@@ -70,6 +70,7 @@ import Foundation
         var tokyo = Calendar(identifier: .gregorian)
         tokyo.timeZone = TimeZone(identifier: "Asia/Tokyo")!
         precondition(tokyo.component(.day, from: controller.plan!.planDate) == 26)
+        await LiveExplanationChecks.run()
         print("Controller normal → bad-night → reset, refresh, profile, provenance and error checks passed")
     }
 }

@@ -7,7 +7,6 @@ import SwiftUI
 struct HomeView: View {
     @ObservedObject var controller: SleepController
     let reportBadNight: (@MainActor () async -> Void)?
-    let explain: PlanExplainer?
     /// Fixed time for previews; nil reads the clock on every redraw.
     let fixedNow: Date?
 
@@ -24,11 +23,9 @@ struct HomeView: View {
 
     init(controller: SleepController,
          reportBadNight: (@MainActor () async -> Void)? = nil,
-         explain: PlanExplainer? = nil,
          now: Date? = nil) {
         _controller = ObservedObject(wrappedValue: controller)
         self.reportBadNight = reportBadNight
-        self.explain = explain
         self.fixedNow = now
     }
 
@@ -70,8 +67,7 @@ struct HomeView: View {
         .fontDesign(.rounded)
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showingExplanation) {
-            ExplanationView(result: controller.plan.flatMap { controller.explanationResult(for: $0) },
-                            explain: explain)
+            ExplanationView(controller: controller)
         }
         .sheet(isPresented: $showingControls) { ContentView(controller: controller) }
         .onAppear { lastPlan = controller.plan }
@@ -304,12 +300,8 @@ private struct ModeBadge: View {
             controller.plan = PreviewPlans.badNight()
             controller.sheepyState = .drained
             controller.planningLoading = false
-        },
-        explain: { _ in
-            try await Task.sleep(for: .seconds(0.8))
-            return PlanExplanation(text: "Preview text. Your 7 AM commitment sets the wake time; the rest works back from there.",
-                                   isFallback: true)
         }
+
     )
 }
 

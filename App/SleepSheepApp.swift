@@ -6,10 +6,7 @@ struct SleepSheepApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView(controller: controller,
-                     reportBadNight: { controller.setDemoSleepScenario(.badNight) },
-                     explain: { result in
-                         PlanExplanation(text: OfflineExplainer().explain(result), isFallback: true)
-                     })
+                     reportBadNight: { controller.setDemoSleepScenario(.badNight) })
         }
     }
 }

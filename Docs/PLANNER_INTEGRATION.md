@@ -63,43 +63,30 @@ For the default 7 AM commitment and 60-minute preparation buffer:
 These example wall times assume a normal non-DST-transition night. The planner uses
 elapsed durations across DST. All four timeline outputs come from one DailyPlan.
 
-## Offline explanation contract
+## Offline and explicit Claude explanations
 
-The verified offline-only commit is `10384cb`. The later live `ClaudeService`
-commit on B's branch was intentionally not merged in this task.
+B's completed service handoff through `4bb01f6` is integrated. See
+[LIVE_EXPLANATION_INTEGRATION.md](LIVE_EXPLANATION_INTEGRATION.md) for the sharing
+contract, request lifecycle, verification, and exact phone test steps.
 
-`PlanExplainer` now accepts the exact `PlanResult`, not a DailyPlan requiring a
-second lookup or generation. HomeView passes
-`controller.plan.flatMap { controller.explanationResult(for: $0) }` to the sheet,
-so missing or mismatched retained results cannot expose an old explanation.
-The app's closure calls `OfflineExplainer().explain(result)` and wraps the text in
-`PlanExplanation(text:isFallback: true)`. No makeResult call is made by the runtime
-explanation path. The sheet request key includes the complete result and retry
-count: explanation facts changing with identical plan dates still refresh text.
-Resolved text is shown only when its key matches the current result. Missing
-results immediately show the no-plan message; canceled old requests are ignored.
+The sheet observes the existing controller and renders `OfflineExplainer().explain`
+from its exact retained PlanResult immediately. Claude is optional and runs only
+after the user requests it and confirms sending the visible offline text to Anthropic.
+The service's `PlanExplanation(text:source:)` is now the single shared response type;
+C's duplicate `isFallback` wrapper and old PlanExplainer closure have been removed.
 
-The UI explicitly labels this “Offline explanation” and states that it is generated
-on-device with no network or Claude request. It does not claim a failed live request.
-Planning and explanations both work without network access. Live explanation remains
-a separate future task.
+Every plan invalidation creates a new explanation revision, cancels pending work,
+and clears the previous live text/error/loading state. This includes profile changes
+that happen to produce equal PlanResults. Confirmations capture a revision, and
+responses must still match that revision and result. No plan is regenerated to
+explain it. Missing results show no prior text.
 
-### Credential-loader source inspection (no secret values)
-
-`Services/ClaudeAgent.swift` defines the existing `AgentConfiguration.load()`.
-It resolves bundled `Secrets.plist` (source resource: `Resources/Secrets.plist`),
-expects `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`, and rejects empty values or the
-placeholder API key. `SleepController` owns a long-lived `ClaudeAgent()`; its
-`reply(...)` method loads configuration lazily when a chat request starts.
-There is no separate SDK client: it builds a URLRequest to the Anthropic Messages
-endpoint and sends it using `URLSession.shared`, setting the API-key header and
-model from the configuration.
-
-For the next coordinated live-explanation task, reuse `AgentConfiguration.load()`
-as the configuration boundary, and consider extracting shared HTTP transport from
-ClaudeAgent. Do not duplicate plist loading or reuse its mutable chat/tool history
-as explanation state. No loader/transport changes were made, no credential file was
-opened, and no live request was performed for this integration.
+Credentials come from the existing `AgentConfiguration.load()` in ClaudeAgent.swift,
+which reads bundled `Secrets.plist` using `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL`.
+The explanation service receives a closure calling that loader; it does not add a
+second loader or copy credentials. The chat agent's mutable history/tools remain
+separate. No credential file was inspected and no real Claude request was made
+while integrating this service.
 
 ## Verification and device checks
 

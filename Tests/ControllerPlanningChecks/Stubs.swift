@@ -27,3 +27,10 @@ typealias BluetoothSheep = SimulatedSheep
     func requestAccess() async throws { }
     func sleepSummary(before referenceDate: Date) async throws -> SleepSummary? { Self.nextSummary }
 }
+
+// Uses no credential file; standalone checks never authorize a network call.
+struct AgentConfiguration {
+    let apiKey: String
+    let model: String
+    static func load() throws -> AgentConfiguration { throw SheepFailure("Test configuration unavailable") }
+}
