@@ -5,16 +5,29 @@ struct SleepSummaryView: View {
     /// The app's planning mode, used for the badge when there is no summary to label.
     let mode: PlanningDataMode
     let timeZone: TimeZone
+    var loading = false
+    var error: String? = nil
+    var onEnable: (() -> Void)? = nil
+    var onRefresh: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            CardHeader(title: "Last night", systemImage: "bed.double.fill", source: summary?.provenance ?? mode)
+            CardHeader(title: "Recent sleep", systemImage: "bed.double.fill", source: summary?.provenance ?? mode)
 
-            if let summary {
+            if loading {
+                HStack { ProgressView(); Text("Loading sleep data…") }
+                    .foregroundStyle(Theme.secondaryText)
+            } else if let error {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(Theme.warning)
+            } else if let summary {
                 Text(DayTime.duration(minutes: summary.totalAsleepMinutes))
                     .font(.system(.largeTitle, design: .rounded, weight: .bold))
                     .contentTransition(.numericText())
                     .accessibilityLabel("Slept \(DayTime.duration(minutes: summary.totalAsleepMinutes))")
+
+                Text(DayTime.shortDay(summary.sleepEnd, in: timeZone))
+                    .font(.subheadline).foregroundStyle(Theme.secondaryText)
 
                 Text("\(DayTime.time(summary.sleepStart, in: timeZone)) – \(DayTime.time(summary.sleepEnd, in: timeZone))")
                     .font(.subheadline)
@@ -27,8 +40,22 @@ struct SleepSummaryView: View {
                 }
             } else {
                 // nil means no sleep data was available, not that access was refused.
-                Text("No sleep data for last night.")
+                Text("No readable recent overnight sleep.")
                     .foregroundStyle(Theme.secondaryText)
+            }
+            if let onEnable {
+                HStack {
+                    Button("Enable Health", action: onEnable)
+                        .buttonStyle(.borderedProminent)
+                    if mode == .live, let onRefresh {
+                        Button("Refresh sleep", action: onRefresh).buttonStyle(.bordered)
+                    }
+                }
+                .disabled(loading)
+                Text(mode == .demo
+                     ? "Switches to live data and asks to read Sleep and Heart Rate."
+                     : "Read access is controlled in Health. No readable data can also mean no recent recorded sleep.")
+                    .font(.caption).foregroundStyle(Theme.secondaryText)
             }
         }
         .card()

@@ -26,6 +26,15 @@
 		AF9417F8627C2ABB8B4B4F0F /* Services/HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666080E29BC75278D01428A0 /* Services/HealthKitService.swift */; };
 		9172BD025D818309BD1C68E7 /* Services/SleepSessionProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6DA9CB40FDC603737D99DB6 /* Services/SleepSessionProcessor.swift */; };
 		B963DC23F19DB0D454B15FA8 /* Models/PlanningRequests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3362A474FB3B1B56CEE23DED /* Models/PlanningRequests.swift */; };
+		63793522216A8381AE5D79A3 /* Views/CalendarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E72590FEBF3C98D3CE7B12 /* Views/CalendarCard.swift */; };
+		0D2887C28971F8F20C99FF2E /* Views/DashboardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6981939F55D1C74939F9BA02 /* Views/DashboardStyle.swift */; };
+		5439F3BF799E28A71A8936C8 /* Views/ExplanationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931ADDB13FCEBE338E432F13 /* Views/ExplanationView.swift */; };
+		37509FCBAB35C7263F4F00E8 /* Views/HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5365A0847A05773A2086D96 /* Views/HomeView.swift */; };
+		40C3B48F2B315D10E0823220 /* Views/PreviewPlans.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465B43D382A2F5A483A23956 /* Views/PreviewPlans.swift */; };
+		255E0022EC4C27015D16D415 /* Views/QuestsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C37A2911D6BDED6171FDFCD1 /* Views/QuestsView.swift */; };
+		3352DFA8ABEAD4C62B19F3D9 /* Views/SheepyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */; };
+		B5B4F1E190A69DF1B9D0D37E /* Views/SleepSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */; };
+		5CBCEB883D9D06B33DF015A7 /* Views/TimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +58,15 @@
 		666080E29BC75278D01428A0 /* Services/HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/HealthKitService.swift; sourceTree = SOURCE_ROOT; };
 		D6DA9CB40FDC603737D99DB6 /* Services/SleepSessionProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/SleepSessionProcessor.swift; sourceTree = SOURCE_ROOT; };
 		3362A474FB3B1B56CEE23DED /* Models/PlanningRequests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/PlanningRequests.swift; sourceTree = SOURCE_ROOT; };
+		D8E72590FEBF3C98D3CE7B12 /* Views/CalendarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/CalendarCard.swift"; sourceTree = SOURCE_ROOT; };
+		6981939F55D1C74939F9BA02 /* Views/DashboardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/DashboardStyle.swift"; sourceTree = SOURCE_ROOT; };
+		931ADDB13FCEBE338E432F13 /* Views/ExplanationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/ExplanationView.swift"; sourceTree = SOURCE_ROOT; };
+		B5365A0847A05773A2086D96 /* Views/HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/HomeView.swift"; sourceTree = SOURCE_ROOT; };
+		465B43D382A2F5A483A23956 /* Views/PreviewPlans.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/PreviewPlans.swift"; sourceTree = SOURCE_ROOT; };
+		C37A2911D6BDED6171FDFCD1 /* Views/QuestsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/QuestsView.swift"; sourceTree = SOURCE_ROOT; };
+		56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SheepyView.swift"; sourceTree = SOURCE_ROOT; };
+		E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/SleepSummaryView.swift"; sourceTree = SOURCE_ROOT; };
+		C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/TimelineView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +91,15 @@
 		0D6E4079E36703EBD37C0072 = {
 			isa = PBXGroup;
 			children = (
+				C57BB001A243D2D19D072EAB /* Views/TimelineView.swift */,
+				E84F8B722EE390C3F6661212 /* Views/SleepSummaryView.swift */,
+				56B1F2C258A4F2B6F8F7FA75 /* Views/SheepyView.swift */,
+				C37A2911D6BDED6171FDFCD1 /* Views/QuestsView.swift */,
+				465B43D382A2F5A483A23956 /* Views/PreviewPlans.swift */,
+				B5365A0847A05773A2086D96 /* Views/HomeView.swift */,
+				931ADDB13FCEBE338E432F13 /* Views/ExplanationView.swift */,
+				6981939F55D1C74939F9BA02 /* Views/DashboardStyle.swift */,
+				D8E72590FEBF3C98D3CE7B12 /* Views/CalendarCard.swift */,
 				933D1FD9BB817BCD48302C78 /* App/SleepController.swift */,
 				42CF2525326A80550CA38EBE /* App/SleepSheepApp.swift */,
 				DBD1F562B6B2A9F28CBB9538 /* Models/SheepProtocol.swift */,
@@ -161,6 +188,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5CBCEB883D9D06B33DF015A7 /* Views/TimelineView.swift in Sources */,
+				B5B4F1E190A69DF1B9D0D37E /* Views/SleepSummaryView.swift in Sources */,
+				3352DFA8ABEAD4C62B19F3D9 /* Views/SheepyView.swift in Sources */,
+				255E0022EC4C27015D16D415 /* Views/QuestsView.swift in Sources */,
+				40C3B48F2B315D10E0823220 /* Views/PreviewPlans.swift in Sources */,
+				37509FCBAB35C7263F4F00E8 /* Views/HomeView.swift in Sources */,
+				5439F3BF799E28A71A8936C8 /* Views/ExplanationView.swift in Sources */,
+				0D2887C28971F8F20C99FF2E /* Views/DashboardStyle.swift in Sources */,
+				63793522216A8381AE5D79A3 /* Views/CalendarCard.swift in Sources */,
 				36BF1F09B4712E1B642E3BCF /* App/SleepController.swift in Sources */,
 				FF8134F52AB18EFABB5AAB34 /* App/SleepSheepApp.swift in Sources */,
 				DBB46B3297978344C7C356E7 /* Models/SheepProtocol.swift in Sources */,

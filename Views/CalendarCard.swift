@@ -48,7 +48,8 @@ struct CalendarCard: View {
                     }
                 }
             } else {
-                Text(mode == .live ? "No events in the next 7 days." : "No upcoming commitments.")
+                Text(mode == .demo ? "No upcoming commitments."
+                     : connected ? "No events in the next 7 days." : "Enable Calendar to load upcoming events.")
                     .foregroundStyle(Theme.secondaryText)
             }
 

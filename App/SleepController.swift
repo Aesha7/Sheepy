@@ -22,6 +22,10 @@ final class SleepController: ObservableObject {
     @Published private(set) var planningDataMode: PlanningDataMode
     @Published var planningLoading = false
     @Published var planningError: String?
+    var calendarLoading: Bool { planningRequests.loading(for: .calendar) }
+    var calendarError: String? { planningRequests.error(for: .calendar) }
+    var healthLoading: Bool { planningRequests.loading(for: .health) }
+    var healthError: String? { planningRequests.error(for: .health) }
     private var hardware: SheepHardware
     private var patLog: PatLog?
     private var logError: String?

@@ -1,9 +1,29 @@
 # Sheepy UI (Person C)
 
-The redesigned dashboard, built on `SleepController` and the shared models from `person-a-integration` (`c3ea324`).
+The redesigned dashboard, originally built on `SleepController` and the shared models from `person-a-integration` (`c3ea324`).
 Only `Views/` is new; no shared models, services, app entry point or project files were changed.
 
-**Status: not compiled yet** (written without Xcode). Expect a few compile fixes on the first build. iOS 17.
+**Integration status:** merged into person-a-integration and compiled with the actual SleepSheep simulator scheme. iOS 17.
+
+The app now presents `HomeView` with its existing controller. **Lamp & chat** opens
+`ContentView` using that same instance. No runtime preview plan is installed; the
+empty-plan state remains until B is integrated.
+
+**Health integration added by A:** Recent sleep now has explicit **Enable Health**
+and **Refresh sleep** actions. Enable switches to live only when necessary, awaits
+`requestHealthAccess()`, then calls `refreshLiveSleepSummary(before:)`. Completion
+is not represented as read permission. Loading, errors, no readable sleep, and demo
+provenance are displayed in the existing sleep card. See `Docs/HEALTHKIT_INTEGRATION.md`.
+
+Calendar follows the same live-only transition rule so enabling it does not erase
+already-loaded Health state. Each card reads its provider-specific loading/error
+properties from SleepController. Combined request tracking and mode invalidation
+remain in the controller; cards do not infer their errors from aggregated text.
+
+The generator now synchronizes source membership in place, including Views, without
+replacing settings, resources, entitlements, or schemes. It does not open credentials.
+The instructions below describe C's original handoff; entry-point and generator
+integration are now complete.
 
 ## For A: adding it to the app
 

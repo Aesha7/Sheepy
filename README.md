@@ -6,7 +6,7 @@ fallback. iOS 17+, SwiftUI, CoreBluetooth, and URLSession. No Swift dependencies
 ## Run the iPhone app
 
 1. Open `SleepSheep.xcodeproj` in Xcode. If starting from a fresh checkout, first run
-   `python3 scripts/generate_project.py`; it creates a local placeholder secrets file.
+   `python3 scripts/generate_project.py` to sync source membership while preserving the checked-in project configuration. It does not create or read credential files.
 2. In **Signing & Capabilities**, select your development team and choose a unique
    bundle identifier if needed. Select your real iPhone as the run destination.
 3. Set `ANTHROPIC_API_KEY` and `ANTHROPIC_MODEL` in `Resources/Secrets.plist`.

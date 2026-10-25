@@ -1,8 +1,13 @@
-"""Generate the dependency-free Xcode starter. Safe to rerun; preserves Secrets.plist."""
+"""Sync Swift sources into the checked-in project without replacing configuration.
+
+Preserves existing source/resource membership, IDs, build settings (including signing,
+Info.plist, deployment target and entitlements), schemes, and capability metadata.
+Never opens or creates credential files. Restore the project from Git if missing.
+"""
 import hashlib
 import json
 from pathlib import Path
-import shutil
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -12,61 +17,63 @@ def ident(name):
 
 
 def main():
-    secrets = ROOT / "Resources/Secrets.plist"
-    if not secrets.exists():
-        shutil.copyfile(ROOT / "Resources/Secrets.example.plist", secrets)
-    sources = sorted(str(path.relative_to(ROOT)) for folder in ("App", "Models", "Services")
-                     for path in (ROOT / folder).glob("*.swift"))
-    resources = ["Resources/tools.json", "Resources/Secrets.plist", "Docs/AGENT_PROMPT.md"]
-    objects = []
+    project = ROOT / "SleepSheep.xcodeproj/project.pbxproj"
+    if not project.exists():
+        raise SystemExit("Restore the checked-in Xcode project before syncing sources.")
+    original = project.read_text()
+    parsed = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", str(project)]))
+    objects = parsed["objects"]
+    target = next(value for value in objects.values()
+                  if value.get("isa") == "PBXNativeTarget" and value.get("name") == "SleepSheep")
+    phase_id = next(key for key in target["buildPhases"] if objects[key]["isa"] == "PBXSourcesBuildPhase")
+    main_group = objects[parsed["rootObject"]]["mainGroup"]
+    references = {value.get("path"): key for key, value in objects.items()
+                  if value.get("isa") == "PBXFileReference"}
+    builds = {value.get("fileRef"): key for key, value in objects.items()
+              if value.get("isa") == "PBXBuildFile"}
+    # Existing source roots remain included; Views is now a first-class source folder.
+    folders = {"App", "Models", "Services", "Views"}
+    folders.update(path.split("/")[0] for path in references
+                   if path and path.endswith(".swift") and "/" in path)
+    sources = sorted(str(path.relative_to(ROOT)) for folder in folders
+                     for path in (ROOT / folder).rglob("*.swift"))
+    text = original
 
-    def add(name, body):
-        objects.append(f"{ident(name)} = {{ {body} }};")
+    def add_object(section, line):
+        nonlocal text
+        marker = f"/* End {section} section */"
+        if marker not in text:
+            raise SystemExit(f"Missing project section: {section}")
+        text = text.replace(marker, line + "\n" + marker, 1)
 
-    for path in sources + resources:
-        kind = "sourcecode.swift" if path.endswith(".swift") else "text"
-        add(path, f"isa = PBXFileReference; lastKnownFileType = {kind}; path = {json.dumps(path)}; sourceTree = SOURCE_ROOT;")
-        add("build:" + path, f"isa = PBXBuildFile; fileRef = {ident(path)};")
-    add("product", 'isa = PBXFileReference; explicitFileType = wrapper.application; path = SleepSheep.app; sourceTree = BUILT_PRODUCTS_DIR;')
-    children = ",".join(ident(p) for p in sources + resources)
-    add("main", f"isa = PBXGroup; children = ({children},{ident('products')}); sourceTree = \"<group>\";")
-    add("products", f'isa = PBXGroup; children = ({ident("product")}); name = Products; sourceTree = "<group>";')
-    for name, files, isa in [("sources", sources, "PBXSourcesBuildPhase"), ("resources", resources, "PBXResourcesBuildPhase")]:
-        refs = ",".join(ident("build:" + p) for p in files)
-        add(name, f"isa = {isa}; buildActionMask = 2147483647; files = ({refs}); runOnlyForDeploymentPostprocessing = 0;")
-    add("frameworks", "isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0;")
-    for scope in ("project", "target"):
-        for configuration in ("Debug", "Release"):
-            settings = {
-                "SDKROOT": "iphoneos", "IPHONEOS_DEPLOYMENT_TARGET": "17.0",
-                "SWIFT_VERSION": "5.0", "CLANG_ENABLE_MODULES": "YES",
-                "SWIFT_OPTIMIZATION_LEVEL": "-Onone" if configuration == "Debug" else "-O",
-            }
-            if scope == "target":
-                settings.update({"PRODUCT_BUNDLE_IDENTIFIER": "com.sleepsheep.demo",
-                    "PRODUCT_NAME": "SleepSheep", "INFOPLIST_FILE": "Resources/Info.plist",
-                    "TARGETED_DEVICE_FAMILY": "1", "CODE_SIGN_STYLE": "Automatic",
-                    "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator",
-                    "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/Frameworks"})
-            body = " ".join(f"{key} = {json.dumps(value)};" for key, value in settings.items())
-            add(scope + configuration, f'isa = XCBuildConfiguration; name = {configuration}; buildSettings = {{ {body} }};')
-        add(scope + "configs", f'isa = XCConfigurationList; buildConfigurations = ({ident(scope + "Debug")},{ident(scope + "Release")}); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;')
-    add("target", f'isa = PBXNativeTarget; buildConfigurationList = {ident("targetconfigs")}; buildPhases = ({ident("sources")},{ident("frameworks")},{ident("resources")}); buildRules = (); dependencies = (); name = SleepSheep; productName = SleepSheep; productReference = {ident("product")}; productType = "com.apple.product-type.application";')
-    add("project", f'isa = PBXProject; attributes = {{ LastUpgradeCheck = 1600; }}; buildConfigurationList = {ident("projectconfigs")}; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en,Base); mainGroup = {ident("main")}; productRefGroup = {ident("products")}; projectDirPath = ""; projectRoot = ""; targets = ({ident("target")});')
-    project = ROOT / "SleepSheep.xcodeproj"
-    project.mkdir(exist_ok=True)
-    (project / "project.pbxproj").write_text("// !$*UTF8*$!\n{ archiveVersion = 1; classes = {}; objectVersion = 56; objects = {\n" + "\n".join(objects) + f"\n}}; rootObject = {ident('project')}; }}\n")
-    schemes = project / "xcshareddata/xcschemes"
-    schemes.mkdir(parents=True, exist_ok=True)
-    ref = f'<BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="{ident("target")}" BuildableName="SleepSheep.app" BlueprintName="SleepSheep" ReferencedContainer="container:SleepSheep.xcodeproj"/>'
-    (schemes / "SleepSheep.xcscheme").write_text(f'''<?xml version="1.0" encoding="UTF-8"?>
-<Scheme LastUpgradeVersion="1600" version="1.3">
-<BuildAction parallelizeBuildables="YES" buildImplicitDependencies="YES"><BuildActionEntries><BuildActionEntry buildForTesting="YES" buildForRunning="YES" buildForProfiling="YES" buildForArchiving="YES" buildForAnalyzing="YES">{ref}</BuildActionEntry></BuildActionEntries></BuildAction>
-<LaunchAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.LLDB" launchStyle="0" useCustomWorkingDirectory="NO" ignoresPersistentStateOnLaunch="NO" debugDocumentVersioning="YES" allowLocationSimulation="YES"><BuildableProductRunnable runnableDebuggingMode="0">{ref}</BuildableProductRunnable></LaunchAction>
-<ProfileAction buildConfiguration="Release" shouldUseLaunchSchemeArgsEnv="YES" savedToolIdentifier="" useCustomWorkingDirectory="NO" debugDocumentVersioning="YES"><BuildableProductRunnable runnableDebuggingMode="0">{ref}</BuildableProductRunnable></ProfileAction>
-<AnalyzeAction buildConfiguration="Debug"/><ArchiveAction buildConfiguration="Release" revealArchiveInOrganizer="YES"/>
-</Scheme>''')
-    print("Generated SleepSheep.xcodeproj; private Secrets.plist preserved.")
+    def add_list_item(object_id, field, line):
+        nonlocal text
+        start = text.index(object_id, text.index("/* Begin PBXGroup section */")
+                           if object_id == main_group else text.index("/* Begin PBXSourcesBuildPhase section */"))
+        index = text.index(field + " = (", start) + len(field + " = (")
+        text = text[:index] + "\n" + line + text[index:]
+
+    count = 0
+    for source in sources:
+        ref = references.get(source)
+        if ref is None:
+            ref = ident("source-ref:" + source)
+            if ref in objects:
+                raise SystemExit("Generated source ID collision")
+            add_object("PBXFileReference", f'\t\t{ref} /* {source} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {json.dumps(source)}; sourceTree = SOURCE_ROOT; }};')
+            add_list_item(main_group, "children", f"\t\t\t\t{ref} /* {source} */,")
+        build = builds.get(ref)
+        if build is None:
+            build = ident("source-build:" + source)
+            if build in objects:
+                raise SystemExit("Generated build ID collision")
+            add_object("PBXBuildFile", f"\t\t{build} /* {source} in Sources */ = {{isa = PBXBuildFile; fileRef = {ref} /* {source} */; }};")
+        if build not in objects[phase_id]["files"]:
+            add_list_item(phase_id, "files", f"\t\t\t\t{build} /* {source} in Sources */,")
+            count += 1
+    if text != original:
+        project.write_text(text)
+    print(f"Synced {count} Swift sources; all existing project settings and resources preserved.")
 
 
 if __name__ == "__main__":

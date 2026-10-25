@@ -12,13 +12,13 @@ struct HomeView: View {
     let fixedNow: Date?
 
     @State private var showingExplanation = false
+    @State private var showingControls = false
     @State private var reporting = false
     @State private var lastPlan: DailyPlan?
     @State private var previousPlan: DailyPlan?
-    // planningLoading/planningError are shared by calendar and planning work; these say
-    // which one they belong to, so a calendar error isn't shown as a planning error.
-    @State private var calendarBusy = false
-    @State private var calendarError: String?
+    // Provider-specific status comes from the controller; local state only tracks UI actions.
+    private var calendarBusy: Bool { controller.calendarLoading }
+    private var calendarError: String? { controller.calendarError }
     @State private var calendarConnected = false
     @State private var calendarRun = 0   // only the latest calendar action may update the card
 
@@ -36,9 +36,10 @@ struct HomeView: View {
     private var mode: PlanningDataMode { controller.planningDataMode }
     private var profileZone: TimeZone { DayTime.zone(controller.profile.timeZoneID) }
     private var busy: Bool { reporting || controller.planningLoading }
-    private var replanning: Bool { reporting || (controller.planningLoading && !calendarBusy) }
+    private var replanning: Bool { reporting }
     private var planError: String? {
-        guard let error = controller.planningError, error != calendarError else { return nil }
+        guard let error = controller.planningError, controller.calendarError == nil,
+              controller.healthError == nil else { return nil }
         return error
     }
 
@@ -47,7 +48,10 @@ struct HomeView: View {
             VStack(spacing: 16) {
                 header
                 SheepyView(state: controller.sheepyState).card()
-                SleepSummaryView(summary: controller.sleepSummary, mode: mode, timeZone: profileZone)
+                SleepSummaryView(summary: controller.sleepSummary, mode: mode, timeZone: profileZone,
+                                 loading: controller.healthLoading, error: controller.healthError,
+                                 onEnable: { Task { await enableHealth() } },
+                                 onRefresh: { Task { await refreshHealth() } })
                 CalendarCard(
                     events: controller.calendarEvents, mode: mode, fallbackZone: profileZone, now: now,
                     loading: calendarBusy, error: calendarError, connected: calendarConnected,
@@ -72,6 +76,7 @@ struct HomeView: View {
         .sheet(isPresented: $showingExplanation) {
             ExplanationView(plan: controller.plan, explain: explain)
         }
+        .sheet(isPresented: $showingControls) { ContentView(controller: controller) }
         .onAppear { lastPlan = controller.plan }
         .onChange(of: controller.plan) { _, new in
             // Remember what was on screen before a new plan, so the timeline can mark changes.
@@ -85,7 +90,14 @@ struct HomeView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ModeBadge(mode: mode)
+            HStack {
+                ModeBadge(mode: mode)
+                Spacer()
+                Button { showingControls = true } label: {
+                    Label("Lamp & chat", systemImage: "lightbulb")
+                }
+                .buttonStyle(.bordered)
+            }
             Text("Your sleep plan")
                 .font(.largeTitle.weight(.bold))
                 .accessibilityAddTraits(.isHeader)
@@ -100,7 +112,7 @@ struct HomeView: View {
     private var planPlaceholder: some View {
         VStack(alignment: .leading, spacing: 10) {
             CardHeader(title: "Your plan", systemImage: "list.bullet.clipboard")
-            if controller.planningLoading && !calendarBusy {
+            if reporting {
                 HStack(spacing: 10) {
                     ProgressView().tint(Theme.accent)
                     Text("Building your plan…")
@@ -208,7 +220,7 @@ struct HomeView: View {
     /// Explicit user action: switch to live data, ask for access, then load the next 7 days.
     private func enableCalendar() async {
         guard !busy else { return }
-        controller.selectLivePlanning()
+        if mode != .live { controller.selectLivePlanning() }
         let run = startCalendar()
         if await controller.requestCalendarAccess() {
             await loadWeek(run)
@@ -225,30 +237,37 @@ struct HomeView: View {
 
     private func startCalendar() -> Int {
         calendarRun += 1
-        calendarBusy = true
-        calendarError = nil
         return calendarRun
     }
 
     private func loadWeek(_ run: Int) async {
         await controller.refreshLiveCalendarEvents(in: DateInterval(start: Date(), duration: 7 * 24 * 60 * 60))
-        finishCalendar(run, succeeded: controller.planningError == nil)
+        finishCalendar(run, succeeded: controller.calendarError == nil)
     }
 
     private func finishCalendar(_ run: Int, succeeded: Bool) {
         // A newer action, or a mode change such as Back to demo data, supersedes this one.
         guard run == calendarRun else { return }
-        calendarBusy = false
         guard mode == .live else { return }
-        calendarError = controller.planningError
         if succeeded { calendarConnected = true }
+    }
+
+    private func enableHealth() async {
+        guard !busy else { return }
+        if mode != .live { controller.selectLivePlanning() }
+        if await controller.requestHealthAccess() {
+            await controller.refreshLiveSleepSummary(before: Date())
+        }
+    }
+
+    private func refreshHealth() async {
+        guard !busy, mode == .live else { return }
+        await controller.refreshLiveSleepSummary(before: Date())
     }
 
     private func resetDemo() {
         lastPlan = nil
         previousPlan = nil
-        calendarBusy = false
-        calendarError = nil
         calendarConnected = false
         calendarRun += 1
         controller.loadPlanningDemo(referenceDate: Date(), timeZone: profileZone)
