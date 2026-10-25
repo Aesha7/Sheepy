@@ -1,6 +1,6 @@
 import Foundation
 
-struct PlanExplanation: Equatable {
+struct ExplanationOutput: Equatable {
     enum Source: Equatable {
         case offline
         case live
@@ -36,9 +36,9 @@ struct ClaudeService {
         self.transport = transport
     }
 
-    func explain(_ result: PlanResult) async -> PlanExplanation {
+    func explain(_ result: PlanResult) async -> ExplanationOutput {
         let offline = OfflineExplainer().explain(result)
-        let fallback = PlanExplanation(text: offline, source: .offline)
+        let fallback = ExplanationOutput(text: offline, source: .offline)
 
         guard let creds = credentials(), !creds.apiKey.isEmpty, !creds.model.isEmpty else {
             return fallback
@@ -46,7 +46,7 @@ struct ClaudeService {
         do {
             let live = try await requestRewrite(of: offline, credentials: creds)
             guard ClaudeService.keepsTimes(of: offline, in: live) else { return fallback }
-            return PlanExplanation(text: live, source: .live)
+            return ExplanationOutput(text: live, source: .live)
         } catch {
             return fallback
         }
