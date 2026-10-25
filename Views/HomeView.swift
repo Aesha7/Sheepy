@@ -8,29 +8,38 @@ struct HomeView: View {
     @ObservedObject var controller: SleepController
     let reportBadNight: (@MainActor () async -> Void)?
     let explain: PlanExplainer?
-    let now: Date
+    /// Fixed time for previews; nil reads the clock on every redraw.
+    let fixedNow: Date?
 
     @State private var showingExplanation = false
     @State private var reporting = false
     @State private var lastPlan: DailyPlan?
     @State private var previousPlan: DailyPlan?
+    // planningLoading/planningError are shared by calendar and planning work; these say
+    // which one they belong to, so a calendar error isn't shown as a planning error.
+    @State private var calendarBusy = false
+    @State private var calendarError: String?
+    @State private var calendarConnected = false
+    @State private var calendarRun = 0   // only the latest calendar action may update the card
 
     init(controller: SleepController,
          reportBadNight: (@MainActor () async -> Void)? = nil,
          explain: PlanExplainer? = nil,
-         now: Date = .now) {
+         now: Date? = nil) {
         _controller = ObservedObject(wrappedValue: controller)
         self.reportBadNight = reportBadNight
         self.explain = explain
-        self.now = now
+        self.fixedNow = now
     }
 
+    private var now: Date { fixedNow ?? Date() }
     private var mode: PlanningDataMode { controller.planningDataMode }
     private var profileZone: TimeZone { DayTime.zone(controller.profile.timeZoneID) }
     private var busy: Bool { reporting || controller.planningLoading }
-
-    private var nextEvent: CalendarEvent? {
-        controller.calendarEvents.filter { $0.end > now }.min { $0.start < $1.start }
+    private var replanning: Bool { reporting || (controller.planningLoading && !calendarBusy) }
+    private var planError: String? {
+        guard let error = controller.planningError, error != calendarError else { return nil }
+        return error
     }
 
     var body: some View {
@@ -39,7 +48,12 @@ struct HomeView: View {
                 header
                 SheepyView(state: controller.sheepyState).card()
                 SleepSummaryView(summary: controller.sleepSummary, mode: mode, timeZone: profileZone)
-                CommitmentCard(event: nextEvent, mode: mode, fallbackZone: profileZone, now: now)
+                CalendarCard(
+                    events: controller.calendarEvents, mode: mode, fallbackZone: profileZone, now: now,
+                    loading: calendarBusy, error: calendarError, connected: calendarConnected,
+                    onEnable: { Task { await enableCalendar() } },
+                    onRefresh: { Task { await refreshCalendar() } }
+                )
                 if let plan = controller.plan {
                     PlanTimelineView(plan: plan, previous: previousPlan, now: now)
                 } else {
@@ -86,13 +100,13 @@ struct HomeView: View {
     private var planPlaceholder: some View {
         VStack(alignment: .leading, spacing: 10) {
             CardHeader(title: "Your plan", systemImage: "list.bullet.clipboard")
-            if controller.planningLoading {
+            if controller.planningLoading && !calendarBusy {
                 HStack(spacing: 10) {
                     ProgressView().tint(Theme.accent)
                     Text("Building your plan…")
                 }
                 .foregroundStyle(Theme.secondaryText)
-            } else if let error = controller.planningError {
+            } else if let error = planError {
                 Label("Couldn't build your plan", systemImage: "exclamationmark.triangle")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.warning)
@@ -111,7 +125,7 @@ struct HomeView: View {
     private var actions: some View {
         VStack(spacing: 12) {
             // A failed replan keeps the last plan on screen and says so.
-            if controller.plan != nil, let error = controller.planningError {
+            if controller.plan != nil, let error = planError {
                 VStack(alignment: .leading, spacing: 4) {
                     Label("Couldn't update your plan", systemImage: "exclamationmark.triangle")
                         .font(.subheadline.weight(.semibold))
@@ -129,7 +143,7 @@ struct HomeView: View {
                 Task { await runBadNight() }
             } label: {
                 HStack(spacing: 10) {
-                    if busy {
+                    if replanning {
                         ProgressView().tint(Theme.background)
                         Text("Updating your plan…")
                     } else {
@@ -164,15 +178,13 @@ struct HomeView: View {
             .tint(Theme.accent)
             .disabled(controller.plan == nil)
 
-            if mode == .demo {
-                Button(action: resetDemo) {
-                    Label("Reset demo", systemImage: "arrow.counterclockwise")
-                        .font(.subheadline)
-                        .frame(minHeight: 44)
-                }
-                .tint(Theme.secondaryText)
-                .disabled(busy)
+            Button(action: resetDemo) {
+                Label(mode == .demo ? "Reset demo" : "Back to demo data", systemImage: "arrow.counterclockwise")
+                    .font(.subheadline)
+                    .frame(minHeight: 44)
             }
+            .tint(Theme.secondaryText)
+            .disabled(reporting)
         }
         .padding(.top, 4)
     }
@@ -193,9 +205,52 @@ struct HomeView: View {
         reporting = false
     }
 
+    /// Explicit user action: switch to live data, ask for access, then load the next 7 days.
+    private func enableCalendar() async {
+        guard !busy else { return }
+        controller.selectLivePlanning()
+        let run = startCalendar()
+        if await controller.requestCalendarAccess() {
+            await loadWeek(run)
+        } else {
+            finishCalendar(run, succeeded: false)
+        }
+    }
+
+    /// Never prompts; also picks up access granted later in Settings.
+    private func refreshCalendar() async {
+        guard !busy else { return }
+        await loadWeek(startCalendar())
+    }
+
+    private func startCalendar() -> Int {
+        calendarRun += 1
+        calendarBusy = true
+        calendarError = nil
+        return calendarRun
+    }
+
+    private func loadWeek(_ run: Int) async {
+        await controller.refreshLiveCalendarEvents(in: DateInterval(start: Date(), duration: 7 * 24 * 60 * 60))
+        finishCalendar(run, succeeded: controller.planningError == nil)
+    }
+
+    private func finishCalendar(_ run: Int, succeeded: Bool) {
+        // A newer action, or a mode change such as Back to demo data, supersedes this one.
+        guard run == calendarRun else { return }
+        calendarBusy = false
+        guard mode == .live else { return }
+        calendarError = controller.planningError
+        if succeeded { calendarConnected = true }
+    }
+
     private func resetDemo() {
         lastPlan = nil
         previousPlan = nil
+        calendarBusy = false
+        calendarError = nil
+        calendarConnected = false
+        calendarRun += 1
         controller.loadPlanningDemo(referenceDate: Date(), timeZone: profileZone)
     }
 }
@@ -211,47 +266,6 @@ private struct ModeBadge: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background((mode == .demo ? Theme.warm : Theme.accent).opacity(0.15), in: Capsule())
-    }
-}
-
-struct CommitmentCard: View {
-    let event: CalendarEvent?
-    let mode: PlanningDataMode
-    let fallbackZone: TimeZone
-    let now: Date
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            CardHeader(title: "Next commitment", systemImage: "calendar", source: mode)
-
-            if let event {
-                let zone = event.timeZoneID.flatMap { TimeZone(identifier: $0) } ?? fallbackZone
-                Text(event.title)
-                    .font(.title3.weight(.semibold))
-                    .lineLimit(2)
-                    .truncationMode(.tail)
-                    .accessibilityLabel(event.title)
-                Text(event.isAllDay
-                     ? "\(DayTime.day(event.start, now: now, in: zone)) · All day"
-                     : "\(DayTime.day(event.start, now: now, in: zone)) at \(DayTime.time(event.start, in: zone))")
-                    .foregroundStyle(Theme.secondaryText)
-                if !event.isAllDay, let note = DayTime.zoneNote(zone, at: event.start) {
-                    Label("\(note) time", systemImage: "globe")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.warm)
-                }
-                if let destination = event.destinationTimeZoneID.flatMap(TimeZone.init(identifier:)) {
-                    Label("Destination time zone: \(destination.abbreviation(for: event.end) ?? destination.identifier)",
-                          systemImage: "airplane")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.warm)
-                }
-            } else {
-                Text("No upcoming commitments.")
-                    .foregroundStyle(Theme.secondaryText)
-            }
-        }
-        .card()
     }
 }
 

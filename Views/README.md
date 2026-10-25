@@ -37,12 +37,25 @@ Only `Views/` is new; no shared models, services, app entry point or project fil
 |---|---|
 | `planningDataMode` | "Demo mode" / "Live" header badge; calendar card's source badge; bad-night label ("Simulate bad night" in demo, "I slept poorly" live); Reset demo button (demo only) |
 | `sleepSummary` | Last night: duration, sleep window, heart rate only when present, badge from its own `provenance`. `nil` shows "No sleep data for last night" (never "access denied") |
-| `calendarEvents` | Next commitment: the earliest event that hasn't ended, in its own time zone, all-day aware, destination time zone if supplied |
+| `calendarEvents` | Calendar card: the next commitment (earliest event that hasn't ended, in its own time zone, all-day aware, destination time zone if supplied) and up to four more as "Coming up", keyed by `(id, start, end)` |
 | `plan` | Timeline of the four recommendations in `plan.timeZoneID`, Today/Tomorrow from `planDate`. **`nil` is handled**: "will appear here once your plan is ready" |
 | `planningLoading`, `planningError` | Progress while building/replanning; error in place of the plan, or a "still showing your last plan" banner if one exists |
 | `sheepyState` | Sheepy's image, label and a one-line status |
 | `quests` | Edited through a binding (`$controller.quests`), so the controller keeps the only copy |
 | `profile.timeZoneID` | Time zone for the sleep card and for Reset demo |
+
+## Calendar (per Docs/CALENDAR_INTEGRATION.md)
+
+- **Enable Calendar** (calendar card): `selectLivePlanning()` → `await requestCalendarAccess()` → if granted,
+  `refreshLiveCalendarEvents(in:)` for the next 7 days from now. Nothing prompts until this button is tapped.
+- Once a fetch succeeds the button becomes **Refresh**, which only calls `refreshLiveCalendarEvents(in:)` (never
+  prompts; picks up access granted later in Settings). After an error, Enable Calendar stays for retrying and a
+  **Settings** button appears.
+- `planningLoading`/`planningError` are shared by calendar and planning work, so the view tracks which action is running:
+  calendar loading and errors show on the calendar card, not as "Couldn't build your plan", and the bad-night button
+  doesn't say "Updating your plan…" while the calendar loads. Only the latest calendar tap can update the card.
+- **Back to demo data** (shown in live mode in place of Reset demo) calls `loadPlanningDemo`, which supersedes any
+  outstanding calendar request.
 
 Reset demo calls `controller.loadPlanningDemo(referenceDate:timeZone:)`, which sets `plan = nil`; whoever connects the
 planner should generate a fresh plan after it.
@@ -62,7 +75,8 @@ planner should generate a fresh plan after it.
 
 | File | What it is |
 |---|---|
-| `HomeView.swift` | The scrolling dashboard, the commitment card, and previews (including a clickable connected flow) |
+| `HomeView.swift` | The scrolling dashboard, the calendar actions, and previews (including a clickable connected flow) |
+| `CalendarCard.swift` | Next commitment, coming-up list, Enable Calendar / Refresh / Settings, loading and errors |
 | `SleepSummaryView.swift` | Last night's sleep |
 | `TimelineView.swift` | `PlanTimelineView` (named so it doesn't hide SwiftUI's `TimelineView`); marks steps that changed since the previous plan with "Updated · was …" |
 | `SheepyView.swift` | Four states, D's images if present, otherwise a labeled placeholder drawing; respects Reduce Motion |
